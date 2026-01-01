@@ -218,7 +218,7 @@ export default function RankingDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
+      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -231,7 +231,7 @@ export default function RankingDetailPage() {
 
   if (error || !ranking) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
+      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Ranking not found'}</p>
@@ -257,7 +257,8 @@ export default function RankingDetailPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
+        {/* Buttons row - top */}
+        <div className="flex items-center justify-between gap-4 mb-4">
           <Link
             href="/rankings"
             className="group flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
@@ -267,12 +268,6 @@ export default function RankingDetailPage() {
             </svg>
             Back
           </Link>
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-              {ranking.name || 'My Ranking'}
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{formattedDate}</p>
-          </div>
           <div className="flex items-center gap-2">
             {!isEditing ? (
               <>
@@ -346,16 +341,20 @@ export default function RankingDetailPage() {
             )}
           </div>
         </div>
+        
+        {/* Title row - below buttons */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
+            {ranking.name || 'My Ranking'}
+          </h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{formattedDate}</p>
+        </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-3xl p-6 border-2 border-slate-200 dark:border-slate-700 shadow-xl mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <div className="px-4 py-2 bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 rounded-xl">
-                <span className="text-lg font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">
-                  {ranking.song_count} songs
-                </span>
-              </div>
-            </div>
+        <div className="mb-6">
+          <div className="inline-flex px-4 py-2 bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 rounded-xl">
+            <span className="text-base md:text-lg font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">
+              {ranking.song_count} songs
+            </span>
           </div>
         </div>
 
@@ -378,7 +377,7 @@ export default function RankingDetailPage() {
               onDragStart={() => handleDragStart(index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragEnd={handleDragEnd}
-              className={`group flex items-center gap-4 p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all ${
+              className={`group flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 transition-all ${
                 isEditing
                   ? draggedIndex === index
                     ? 'border-[#c97d4a] dark:border-[#d98d5a] shadow-2xl scale-[1.02] cursor-grabbing'
@@ -387,7 +386,7 @@ export default function RankingDetailPage() {
               }`}
             >
               <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-xl font-bold text-white text-xl shadow-lg">
+                <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-xl font-bold text-white text-base md:text-xl shadow-lg">
                   #{index + 1}
                 </div>
                 {isEditing && (
@@ -422,18 +421,20 @@ export default function RankingDetailPage() {
                   </svg>
                 </div>
               )}
-              <div className="relative w-16 h-16 flex-shrink-0">
-                <div className="song-placeholder absolute inset-0 w-16 h-16 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
+              <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
+                {/* Placeholder - shown by default */}
+                <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
-                  <svg className="w-8 h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-7 h-7 md:w-8 md:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                   </svg>
                 </div>
+                {/* Image - overlays placeholder when loaded */}
                 {song.cover_art_url && (
                   <img
                     src={song.cover_art_url}
                     alt={song.title}
-                    className="w-16 h-16 object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                    className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                     onError={(e) => {
                       const target = e.currentTarget
                       target.style.opacity = '0'
@@ -451,10 +452,10 @@ export default function RankingDetailPage() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-lg text-slate-900 dark:text-slate-100 truncate">{song.title}</p>
-                <p className="text-slate-600 dark:text-slate-400 truncate">{song.artist}</p>
+                <p className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 truncate">{song.title}</p>
+                <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">{song.artist}</p>
                 {song.album_title && (
-                  <p className="text-sm text-slate-500 dark:text-slate-400 truncate mt-1">
+                  <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400 truncate mt-0.5 md:mt-1">
                     {song.album_title}
                   </p>
                 )}

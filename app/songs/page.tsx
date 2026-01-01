@@ -15,7 +15,8 @@ export default function SongsPage() {
   return (
     <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
+        {/* Buttons row - top */}
+        <div className="flex items-center gap-4 mb-4">
           <Link
             href="/"
             className="group flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#8a9a7a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#d8e8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#6b7d5a]/30 dark:border-[#6b7d5a]/50"
@@ -25,12 +26,14 @@ export default function SongsPage() {
             </svg>
             Back
           </Link>
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-              Song Ranker
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Rank your favorite songs with precision</p>
-          </div>
+        </div>
+        
+        {/* Title row - below buttons */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
+            Song Ranker
+          </h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Rank your favorite songs with precision</p>
         </div>
 
         {step === 'select' && (
@@ -227,7 +230,7 @@ function AlbumSelection({
                 </button>
                 <div className="flex items-start gap-4">
                   <div className="relative w-20 h-20 flex-shrink-0">
-                    <div className="album-placeholder absolute inset-0 w-20 h-20 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-lg flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
+                    <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-lg flex items-center justify-center overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
@@ -237,7 +240,7 @@ function AlbumSelection({
                       <img
                         src={album.coverArtUrl}
                         alt={album.title}
-                        className="w-20 h-20 object-cover rounded-xl shadow-lg transition-opacity duration-300 opacity-0"
+                        className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-lg transition-opacity duration-300 opacity-0"
                         onError={(e) => {
                           const target = e.currentTarget
                           target.style.opacity = '0'
@@ -314,7 +317,7 @@ function AlbumSelection({
                       >
                         <td className="px-4 py-3">
                           <div className="relative w-12 h-12">
-                            <div className="album-placeholder absolute inset-0 w-12 h-12 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
+                            <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                               <svg className="w-6 h-6 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
@@ -324,7 +327,7 @@ function AlbumSelection({
                               <img
                                 src={album.coverArtUrl}
                                 alt={album.title}
-                                className="w-12 h-12 object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
+                                className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
                                 onError={(e) => {
                                   const target = e.currentTarget
                                   target.style.opacity = '0'
@@ -395,19 +398,19 @@ function AlbumSelection({
                     </div>
                   )}
                   <div className="relative w-full aspect-square mb-3">
-                    {/* Placeholder - shown by default, hidden when image loads */}
-                    <div className={`album-placeholder absolute inset-0 w-full aspect-square bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300 ${album.coverArtUrl ? '' : ''}`}>
+                    {/* Placeholder - shown by default */}
+                    <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-12 h-12 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                       </svg>
                     </div>
-                    {/* Image - hidden initially, shown when loaded */}
+                    {/* Image - overlays placeholder when loaded */}
                     {album.coverArtUrl && (
                       <img
                         src={album.coverArtUrl}
                         alt={album.title}
-                        className="w-full aspect-square object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                        className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                         onError={(e) => {
                           const target = e.currentTarget
                           target.style.opacity = '0'
@@ -634,7 +637,7 @@ function SongReview({
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="relative w-20 h-20 flex-shrink-0">
-                    <div className="album-placeholder absolute inset-0 w-20 h-20 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
+                    <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
@@ -644,7 +647,7 @@ function SongReview({
                       <img
                         src={album.coverArtUrl}
                         alt={album.title}
-                        className="w-20 h-20 object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                        className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                         onError={(e) => {
                           const target = e.currentTarget
                           target.style.opacity = '0'

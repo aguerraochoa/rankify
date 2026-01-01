@@ -79,7 +79,7 @@ export default function RankingsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
+      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -92,7 +92,7 @@ export default function RankingsPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
+      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
@@ -111,7 +111,8 @@ export default function RankingsPage() {
   return (
     <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
+        {/* Buttons row - top */}
+        <div className="flex items-center gap-4 mb-4">
           <Link
             href="/"
             className="group flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
@@ -121,12 +122,14 @@ export default function RankingsPage() {
             </svg>
             Back
           </Link>
-          <div className="flex-1">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-              My Rankings
-            </h1>
-            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">View and manage your saved song rankings</p>
-          </div>
+        </div>
+        
+        {/* Title row - below buttons */}
+        <div className="mb-8">
+          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
+            My Rankings
+          </h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">View and manage your saved song rankings</p>
         </div>
 
         {rankings.length === 0 ? (
@@ -199,17 +202,19 @@ export default function RankingsPage() {
                             #{index + 1}
                           </div>
                           <div className="relative w-8 h-8 flex-shrink-0">
-                            <div className="song-placeholder absolute inset-0 w-8 h-8 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
+                            {/* Placeholder - shown by default */}
+                            <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                               <svg className="w-4 h-4 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                               </svg>
                             </div>
+                            {/* Image - overlays placeholder when loaded */}
                             {song.cover_art_url && (
                               <img
                                 src={song.cover_art_url}
                                 alt={song.title}
-                                className="w-8 h-8 object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
+                                className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
                                 onError={(e) => {
                                   const target = e.currentTarget
                                   target.style.opacity = '0'

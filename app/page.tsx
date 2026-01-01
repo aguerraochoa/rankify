@@ -64,33 +64,34 @@ export default function Home() {
   return (
     <main className="min-h-screen p-8" style={{ backgroundColor: '#f5f1e8' }}>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-12">
-          <div>
-            <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-              Rankify
-            </h1>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">
-              Rank your music with precision
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/rankings"
-              className="px-5 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
-            >
-              My Rankings
-            </Link>
-            <button
-              onClick={async () => {
-                await supabase.auth.signOut()
-                router.push('/login')
-                router.refresh()
-              }}
-              className="px-5 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#8a9a7a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#d8e8d0] dark:hover:bg-[#3a4d2a]/40 transition-all shadow-md hover:shadow-lg border border-[#6b7d5a]/30 dark:border-[#6b7d5a]/50 rounded-xl"
-            >
-              Sign Out
-            </button>
-          </div>
+        {/* Buttons row - top */}
+        <div className="flex items-center justify-end gap-3 mb-4">
+          <Link
+            href="/rankings"
+            className="px-5 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+          >
+            My Rankings
+          </Link>
+          <button
+            onClick={async () => {
+              await supabase.auth.signOut()
+              router.push('/login')
+              router.refresh()
+            }}
+            className="px-5 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#8a9a7a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#d8e8d0] dark:hover:bg-[#3a4d2a]/40 transition-all shadow-md hover:shadow-lg border border-[#6b7d5a]/30 dark:border-[#6b7d5a]/50 rounded-xl"
+          >
+            Sign Out
+          </button>
+        </div>
+        
+        {/* Title row - below buttons */}
+        <div className="mb-12">
+          <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
+            Rankify
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 text-base md:text-lg">
+            Rank your music with precision
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
@@ -109,20 +110,28 @@ export default function Home() {
             </p>
           </Link>
 
-          <Link
-            href="/albums"
-            className="group relative bg-white dark:bg-slate-800 p-8 border-2 border-slate-200 dark:border-slate-700 rounded-3xl hover:border-[#c97d4a] dark:hover:border-[#d98d5a] shadow-xl hover:shadow-2xl transition-all card-hover"
-          >
-            <div className="w-16 h-16 bg-gradient-to-br from-[#c97d4a] to-[#d98d5a] rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+          <div className="group relative bg-white dark:bg-slate-800 p-8 border-2 border-slate-300 dark:border-slate-600 rounded-3xl shadow-lg opacity-75 cursor-not-allowed">
+            <div className="absolute top-4 right-4">
+              <span className="px-3 py-1 bg-gradient-to-r from-[#c97d4a] to-[#d98d5a] text-white text-xs font-bold rounded-full shadow-md uppercase tracking-wide">
+                Coming Soon
+              </span>
+            </div>
+            <div className="w-16 h-16 bg-gradient-to-br from-[#c97d4a] to-[#d98d5a] rounded-2xl flex items-center justify-center mb-6 shadow-lg opacity-60">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 className="text-3xl font-bold mb-3 text-slate-900 dark:text-slate-100">Album Ranker</h2>
-            <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
+            <h2 className="text-3xl font-bold mb-3 text-slate-700 dark:text-slate-300">Album Ranker</h2>
+            <p className="text-slate-500 dark:text-slate-500 text-lg leading-relaxed">
               Rank albums with Beli-style preference system
             </p>
-          </Link>
+            <div className="mt-4 flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>This feature is under development</span>
+            </div>
+          </div>
         </div>
       </div>
     </main>

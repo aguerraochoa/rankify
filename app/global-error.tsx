@@ -10,7 +10,7 @@ export default function GlobalError({
   return (
     <html>
       <body>
-        <div className="flex min-h-screen flex-col items-center justify-center p-8">
+        <div className="flex min-h-screen flex-col items-center justify-center p-8" style={{ backgroundColor: '#f5f1e8' }}>
           <div className="text-center">
             <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
             <p className="text-gray-600 mb-4">
