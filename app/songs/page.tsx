@@ -227,32 +227,32 @@ function AlbumSelection({
                 </button>
                 <div className="flex items-start gap-4">
                   <div className="relative w-20 h-20 flex-shrink-0">
-                    {album.coverArtUrl ? (
-                      <img
-                        src={album.coverArtUrl}
-                        alt={album.title}
-                        className="w-20 h-20 object-cover rounded-xl shadow-lg"
-                        onError={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'none'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                          if (placeholder) placeholder.classList.remove('hidden')
-                        }}
-                        onLoad={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'block'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                          if (placeholder) placeholder.classList.add('hidden')
-                        }}
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <div className={`album-placeholder absolute inset-0 w-20 h-20 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-lg flex items-center justify-center relative overflow-hidden ${album.coverArtUrl ? 'hidden' : ''}`}>
+                    <div className="album-placeholder absolute inset-0 w-20 h-20 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-lg flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                       </svg>
                     </div>
+                    {album.coverArtUrl && (
+                      <img
+                        src={album.coverArtUrl}
+                        alt={album.title}
+                        className="w-20 h-20 object-cover rounded-xl shadow-lg transition-opacity duration-300 opacity-0"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          target.style.opacity = '0'
+                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                          if (placeholder) placeholder.style.opacity = '1'
+                        }}
+                        onLoad={(e) => {
+                          const target = e.currentTarget
+                          target.style.opacity = '1'
+                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                          if (placeholder) placeholder.style.opacity = '0'
+                        }}
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0 pt-1">
                     <p className="font-bold text-slate-900 dark:text-slate-100 truncate text-lg">{album.title}</p>
@@ -314,32 +314,32 @@ function AlbumSelection({
                       >
                         <td className="px-4 py-3">
                           <div className="relative w-12 h-12">
-                            {album.coverArtUrl ? (
-                              <img
-                                src={album.coverArtUrl}
-                                alt={album.title}
-                                className="w-12 h-12 object-cover rounded-lg shadow-md"
-                                onError={(e) => {
-                                  const target = e.currentTarget
-                                  target.style.display = 'none'
-                                  const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                                  if (placeholder) placeholder.classList.remove('hidden')
-                                }}
-                                onLoad={(e) => {
-                                  const target = e.currentTarget
-                                  target.style.display = 'block'
-                                  const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                                  if (placeholder) placeholder.classList.add('hidden')
-                                }}
-                                loading="lazy"
-                              />
-                            ) : null}
-                            <div className={`album-placeholder absolute inset-0 w-12 h-12 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center relative overflow-hidden ${album.coverArtUrl ? 'hidden' : ''}`}>
+                            <div className="album-placeholder absolute inset-0 w-12 h-12 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                               <svg className="w-6 h-6 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                               </svg>
                             </div>
+                            {album.coverArtUrl && (
+                              <img
+                                src={album.coverArtUrl}
+                                alt={album.title}
+                                className="w-12 h-12 object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
+                                onError={(e) => {
+                                  const target = e.currentTarget
+                                  target.style.opacity = '0'
+                                  const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                                  if (placeholder) placeholder.style.opacity = '1'
+                                }}
+                                onLoad={(e) => {
+                                  const target = e.currentTarget
+                                  target.style.opacity = '1'
+                                  const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                                  if (placeholder) placeholder.style.opacity = '0'
+                                }}
+                                loading="lazy"
+                              />
+                            )}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -395,39 +395,38 @@ function AlbumSelection({
                     </div>
                   )}
                   <div className="relative w-full aspect-square mb-3">
-                    {album.coverArtUrl ? (
-                      <img
-                        src={album.coverArtUrl}
-                        alt={album.title}
-                        className="w-full aspect-square object-cover rounded-xl shadow-md"
-                        onError={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'none'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                          if (placeholder) {
-                            placeholder.classList.remove('hidden')
-                            placeholder.style.display = 'flex'
-                          }
-                        }}
-                        onLoad={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'block'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                          if (placeholder) {
-                            placeholder.classList.add('hidden')
-                            placeholder.style.display = 'none'
-                          }
-                        }}
-                        loading="lazy"
-                        style={{ display: 'block' }}
-                      />
-                    ) : null}
-                    <div className={`album-placeholder absolute inset-0 w-full aspect-square bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden`}>
+                    {/* Placeholder - shown by default, hidden when image loads */}
+                    <div className={`album-placeholder absolute inset-0 w-full aspect-square bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300 ${album.coverArtUrl ? '' : ''}`}>
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-12 h-12 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                       </svg>
                     </div>
+                    {/* Image - hidden initially, shown when loaded */}
+                    {album.coverArtUrl && (
+                      <img
+                        src={album.coverArtUrl}
+                        alt={album.title}
+                        className="w-full aspect-square object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          target.style.opacity = '0'
+                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                          if (placeholder) {
+                            placeholder.style.opacity = '1'
+                          }
+                        }}
+                        onLoad={(e) => {
+                          const target = e.currentTarget
+                          target.style.opacity = '1'
+                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                          if (placeholder) {
+                            placeholder.style.opacity = '0'
+                          }
+                        }}
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                   <div>
                     <p className={`font-bold truncate ${isSelected ? 'text-[#2a3d1a] dark:text-[#f0f8e8]' : 'text-slate-900 dark:text-slate-100'}`}>
@@ -635,32 +634,32 @@ function SongReview({
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="relative w-20 h-20 flex-shrink-0">
-                    {album.coverArtUrl ? (
-                      <img
-                        src={album.coverArtUrl}
-                        alt={album.title}
-                        className="w-20 h-20 object-cover rounded-xl shadow-md"
-                        onError={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'none'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                          if (placeholder) placeholder.classList.remove('hidden')
-                        }}
-                        onLoad={(e) => {
-                          const target = e.currentTarget
-                          target.style.display = 'block'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
-                          if (placeholder) placeholder.classList.add('hidden')
-                        }}
-                        loading="lazy"
-                      />
-                    ) : null}
-                    <div className={`album-placeholder absolute inset-0 w-20 h-20 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden ${album.coverArtUrl ? 'hidden' : ''}`}>
+                    <div className="album-placeholder absolute inset-0 w-20 h-20 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                       </svg>
                     </div>
+                    {album.coverArtUrl && (
+                      <img
+                        src={album.coverArtUrl}
+                        alt={album.title}
+                        className="w-20 h-20 object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                        onError={(e) => {
+                          const target = e.currentTarget
+                          target.style.opacity = '0'
+                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                          if (placeholder) placeholder.style.opacity = '1'
+                        }}
+                        onLoad={(e) => {
+                          const target = e.currentTarget
+                          target.style.opacity = '1'
+                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                          if (placeholder) placeholder.style.opacity = '0'
+                        }}
+                        loading="lazy"
+                      />
+                    )}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-xl text-slate-900 dark:text-slate-100 mb-1">{album.title}</h3>
@@ -1071,21 +1070,35 @@ function SongRanking({
                     {state.ranked.length === 0 ? 'SONG A' : 'NEW SONG'}
                   </div>
                   <div className="flex flex-col items-center text-center">
-                    {state.currentComparison.newSong.coverArtUrl ? (
-                      <img
-                        src={state.currentComparison.newSong.coverArtUrl}
-                        alt={state.currentComparison.newSong.title}
-                        className="w-20 h-20 md:w-48 md:h-48 object-cover rounded-lg md:rounded-2xl mx-auto mb-2 md:mb-6 shadow-md md:shadow-xl"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 md:w-48 md:h-48 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg md:rounded-2xl mx-auto mb-2 md:mb-6 shadow-md md:shadow-xl flex items-center justify-center relative overflow-hidden">
+                    <div className="relative w-20 h-20 md:w-48 md:h-48 mx-auto mb-2 md:mb-6">
+                      <div className="absolute inset-0 w-20 h-20 md:w-48 md:h-48 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg md:rounded-2xl shadow-md md:shadow-xl flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                         <div className="absolute inset-0 opacity-15" style={{ backgroundImage: 'radial-gradient(circle at 3px 3px, white 1px, transparent 0)', backgroundSize: '12px 12px' }}></div>
                         <div className="absolute inset-0 bg-gradient-to-br from-[#c97d4a]/10 to-transparent"></div>
                         <svg className="w-10 h-10 md:w-24 md:h-24 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                         </svg>
                       </div>
-                    )}
+                      {state.currentComparison.newSong.coverArtUrl && (
+                        <img
+                          src={state.currentComparison.newSong.coverArtUrl}
+                          alt={state.currentComparison.newSong.title}
+                          className="w-20 h-20 md:w-48 md:h-48 object-cover rounded-lg md:rounded-2xl shadow-md md:shadow-xl transition-opacity duration-300 opacity-0 absolute inset-0"
+                          onError={(e) => {
+                            const target = e.currentTarget
+                            target.style.opacity = '0'
+                            const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
+                            if (placeholder) placeholder.style.opacity = '1'
+                          }}
+                          onLoad={(e) => {
+                            const target = e.currentTarget
+                            target.style.opacity = '1'
+                            const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
+                            if (placeholder) placeholder.style.opacity = '0'
+                          }}
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
                     <h4 className="text-sm md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-slate-100 line-clamp-2">
                       {state.currentComparison.newSong.title}
                     </h4>
@@ -1111,20 +1124,34 @@ function SongRanking({
                     {state.ranked.length === 0 ? 'SONG B' : `SONG #${state.currentComparison.position + 1}`}
                   </div>
                   <div className="flex flex-col items-center text-center">
-                    {state.currentComparison.comparedSong.coverArtUrl ? (
-                      <img
-                        src={state.currentComparison.comparedSong.coverArtUrl}
-                        alt={state.currentComparison.comparedSong.title}
-                        className="w-20 h-20 md:w-48 md:h-48 object-cover rounded-lg md:rounded-2xl mx-auto mb-2 md:mb-6 shadow-md md:shadow-xl"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 md:w-48 md:h-48 bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 rounded-lg md:rounded-2xl mx-auto mb-2 md:mb-6 shadow-md md:shadow-xl flex items-center justify-center relative overflow-hidden">
+                    <div className="relative w-20 h-20 md:w-48 md:h-48 mx-auto mb-2 md:mb-6">
+                      <div className="absolute inset-0 w-20 h-20 md:w-48 md:h-48 bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 rounded-lg md:rounded-2xl shadow-md md:shadow-xl flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 3px 3px, white 1px, transparent 0)', backgroundSize: '12px 12px' }}></div>
                         <svg className="w-10 h-10 md:w-24 md:h-24 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                         </svg>
                       </div>
-                    )}
+                      {state.currentComparison.comparedSong.coverArtUrl && (
+                        <img
+                          src={state.currentComparison.comparedSong.coverArtUrl}
+                          alt={state.currentComparison.comparedSong.title}
+                          className="w-20 h-20 md:w-48 md:h-48 object-cover rounded-lg md:rounded-2xl shadow-md md:shadow-xl transition-opacity duration-300 opacity-0 absolute inset-0"
+                          onError={(e) => {
+                            const target = e.currentTarget
+                            target.style.opacity = '0'
+                            const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
+                            if (placeholder) placeholder.style.opacity = '1'
+                          }}
+                          onLoad={(e) => {
+                            const target = e.currentTarget
+                            target.style.opacity = '1'
+                            const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
+                            if (placeholder) placeholder.style.opacity = '0'
+                          }}
+                          loading="lazy"
+                        />
+                      )}
+                    </div>
                     <h4 className="text-sm md:text-2xl font-bold mb-1 md:mb-2 text-slate-900 dark:text-slate-100 line-clamp-2">
                       {state.currentComparison.comparedSong.title}
                     </h4>

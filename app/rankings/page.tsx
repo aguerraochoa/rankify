@@ -199,24 +199,32 @@ export default function RankingsPage() {
                             #{index + 1}
                           </div>
                           <div className="relative w-8 h-8 flex-shrink-0">
-                            {song.cover_art_url ? (
-                              <img
-                                src={song.cover_art_url}
-                                alt={song.title}
-                                className="w-8 h-8 object-cover rounded-lg shadow-md"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none'
-                                  const placeholder = e.currentTarget.parentElement?.querySelector('.song-placeholder') as HTMLElement
-                                  if (placeholder) placeholder.classList.remove('hidden')
-                                }}
-                              />
-                            ) : null}
-                            <div className={`song-placeholder absolute inset-0 w-8 h-8 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center relative overflow-hidden ${song.cover_art_url ? 'hidden' : ''}`}>
+                            <div className="song-placeholder absolute inset-0 w-8 h-8 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                               <svg className="w-4 h-4 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                                 <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                               </svg>
                             </div>
+                            {song.cover_art_url && (
+                              <img
+                                src={song.cover_art_url}
+                                alt={song.title}
+                                className="w-8 h-8 object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
+                                onError={(e) => {
+                                  const target = e.currentTarget
+                                  target.style.opacity = '0'
+                                  const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                                  if (placeholder) placeholder.style.opacity = '1'
+                                }}
+                                onLoad={(e) => {
+                                  const target = e.currentTarget
+                                  target.style.opacity = '1'
+                                  const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                                  if (placeholder) placeholder.style.opacity = '0'
+                                }}
+                                loading="lazy"
+                              />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium truncate text-slate-900 dark:text-slate-100">{song.title}</p>
