@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { generateRankingPDF } from '@/lib/pdf/generateRankingPDF'
+import { generateRankingImage } from '@/lib/image/generateRankingImage'
 
 interface RankedSong {
   musicbrainz_id?: string
@@ -31,7 +31,7 @@ export default function RankingDetailPage() {
   const [editableSongs, setEditableSongs] = useState<RankedSong[]>([])
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
@@ -198,19 +198,19 @@ export default function RankingDetailPage() {
     }
   }
 
-  const handleDownloadPDF = async () => {
+  const handleDownloadImage = async () => {
     if (!ranking) return
 
-    setIsGeneratingPDF(true)
+    setIsGeneratingImage(true)
     
     // Add timeout to prevent hanging indefinitely
     const timeoutId = setTimeout(() => {
-      setIsGeneratingPDF(false)
+      setIsGeneratingImage(false)
       alert('The download is taking longer than expected. Please try again.')
     }, 30000) // 30 second timeout
     
     try {
-      await generateRankingPDF({
+      await generateRankingImage({
         name: ranking.name,
         songs: ranking.songs,
         created_at: ranking.created_at,
@@ -218,7 +218,7 @@ export default function RankingDetailPage() {
       clearTimeout(timeoutId)
     } catch (err: any) {
       clearTimeout(timeoutId)
-      console.error('Error generating PDF:', err)
+      console.error('Error generating image:', err)
       
       // Provide more helpful error messages
       let errorMessage = 'Failed to generate image. '
@@ -233,7 +233,7 @@ export default function RankingDetailPage() {
       alert(errorMessage)
     } finally {
       clearTimeout(timeoutId)
-      setIsGeneratingPDF(false)
+      setIsGeneratingImage(false)
     }
   }
 
@@ -293,12 +293,12 @@ export default function RankingDetailPage() {
             {!isEditing ? (
               <>
                 <button
-                  onClick={handleDownloadPDF}
-                  disabled={isGeneratingPDF}
+                  onClick={handleDownloadImage}
+                  disabled={isGeneratingImage}
                   aria-label="Download ranking as image"
                   className="w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isGeneratingPDF ? (
+                  {isGeneratingImage ? (
                     <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
