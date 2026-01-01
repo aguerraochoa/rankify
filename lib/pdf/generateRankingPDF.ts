@@ -19,14 +19,22 @@ export async function generateRankingPDF(ranking: RankingData): Promise<void> {
 
   // Create a temporary container for the receipt
   const container = document.createElement('div')
-  container.style.position = 'absolute'
-  container.style.left = '-9999px'
-  container.style.width = '384px' // Receipt width (thermal printer width)
+  // Make container visible but off-screen for better mobile compatibility
+  // Using fixed positioning with negative left to keep it in viewport but hidden
+  container.style.position = 'fixed'
+  container.style.top = '0'
+  container.style.left = '-400px' // Off-screen but still in viewport
+  container.style.width = '384px'
+  container.style.maxHeight = '100vh'
+  container.style.overflow = 'auto'
   container.style.backgroundColor = '#ffffff'
   container.style.fontFamily = 'monospace'
   container.style.padding = '20px'
   container.style.color = '#000000'
   container.style.lineHeight = '1.4'
+  container.style.zIndex = '9999'
+  container.style.visibility = 'visible' // Ensure it's visible to html2canvas
+  container.style.opacity = '1'
   document.body.appendChild(container)
 
   // Header
@@ -146,34 +154,103 @@ export async function generateRankingPDF(ranking: RankingData): Promise<void> {
 
   // Generate canvas
   try {
+    // Wait a bit for container to be fully rendered (especially important on mobile)
+    await new Promise(resolve => setTimeout(resolve, 100))
+
+    // Check if we're on mobile
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+    
     const canvas = await html2canvas(container, {
       width: 384,
       backgroundColor: '#ffffff',
-      scale: 2, // Higher quality
+      scale: isMobile ? 1.5 : 2, // Lower scale on mobile for better performance
       logging: false,
+      useCORS: true, // Important for loading external images
+      allowTaint: false,
+      imageTimeout: 15000, // 15 second timeout for images
     })
 
-    // Convert to blob and download
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob)
-        const link = document.createElement('a')
-        link.href = url
-        const rankingTitle = ranking.name || 'my_ranking'
-        link.download = `${rankingTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_ranking.png`
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-        URL.revokeObjectURL(url)
+    // Convert to blob using Promise for better error handling
+    const blob = await new Promise<Blob | null>((resolve, reject) => {
+      try {
+        canvas.toBlob(
+          (blob) => {
+            resolve(blob)
+          },
+          'image/png',
+          0.95 // Quality
+        )
+        // Add timeout for blob conversion
+        setTimeout(() => {
+          reject(new Error('Blob conversion timed out'))
+        }, 10000)
+      } catch (error) {
+        reject(error)
       }
-    }, 'image/png')
+    })
 
-    // Clean up
+    if (!blob) {
+      throw new Error('Failed to create image blob')
+    }
+
+    // Try to use Share API on mobile if available
+    if (isMobile && navigator.share) {
+      try {
+        const file = new File([blob], `${(ranking.name || 'my_ranking').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_ranking.png`, {
+          type: 'image/png',
+        })
+        await navigator.share({
+          files: [file],
+          title: ranking.name || 'My Ranking',
+        })
+        // Clean up
+        document.body.removeChild(container)
+        return
+      } catch (shareError: any) {
+        // If share is cancelled or fails, fall through to download
+        if (shareError.name !== 'AbortError') {
+          console.warn('Share API failed, falling back to download:', shareError)
+        }
+      }
+    }
+
+    // Fallback to download link
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    const rankingTitle = ranking.name || 'my_ranking'
+    link.download = `${rankingTitle.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_ranking.png`
+    
+    // For mobile, we might need to open in new tab
+    if (isMobile) {
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+    }
+    
+    document.body.appendChild(link)
+    
+    // Use a small delay before clicking to ensure link is in DOM
+    await new Promise(resolve => setTimeout(resolve, 50))
+    
+    link.click()
+    
+    // Clean up after a delay
     setTimeout(() => {
-      document.body.removeChild(container)
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    }, 100)
+
+    // Clean up container
+    setTimeout(() => {
+      if (container.parentNode) {
+        document.body.removeChild(container)
+      }
     }, 1000)
   } catch (error) {
-    document.body.removeChild(container)
+    // Ensure cleanup even on error
+    if (container.parentNode) {
+      document.body.removeChild(container)
+    }
     throw error
   }
 }

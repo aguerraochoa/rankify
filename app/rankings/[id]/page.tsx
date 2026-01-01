@@ -202,16 +202,37 @@ export default function RankingDetailPage() {
     if (!ranking) return
 
     setIsGeneratingPDF(true)
+    
+    // Add timeout to prevent hanging indefinitely
+    const timeoutId = setTimeout(() => {
+      setIsGeneratingPDF(false)
+      alert('The download is taking longer than expected. Please try again.')
+    }, 30000) // 30 second timeout
+    
     try {
       await generateRankingPDF({
         name: ranking.name,
         songs: ranking.songs,
         created_at: ranking.created_at,
       })
+      clearTimeout(timeoutId)
     } catch (err: any) {
+      clearTimeout(timeoutId)
       console.error('Error generating PDF:', err)
-      alert(`Failed to generate PDF: ${err.message || 'Please try again.'}`)
+      
+      // Provide more helpful error messages
+      let errorMessage = 'Failed to generate image. '
+      if (err.message?.includes('timeout')) {
+        errorMessage += 'The operation timed out. Please try again.'
+      } else if (err.message?.includes('blob')) {
+        errorMessage += 'Could not create the image file. Please try again.'
+      } else {
+        errorMessage += err.message || 'Please try again.'
+      }
+      
+      alert(errorMessage)
     } finally {
+      clearTimeout(timeoutId)
       setIsGeneratingPDF(false)
     }
   }
