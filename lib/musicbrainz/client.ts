@@ -378,10 +378,10 @@ export async function getReleasesForReleaseGroup(
       }
       // If same date, prefer releases with more tracks (complete version)
       // Get track count from first disc's tracks array length
-      const mediaA = a.media?.[0] as any
-      const mediaB = b.media?.[0] as any
-      const trackCountA = mediaA?.['track-count'] || mediaA?.tracks?.length || mediaA?.track?.length || 0
-      const trackCountB = mediaB?.['track-count'] || mediaB?.tracks?.length || mediaB?.track?.length || 0
+      const firstMediaA = a.media?.[0] as any
+      const firstMediaB = b.media?.[0] as any
+      const trackCountA = firstMediaA?.['track-count'] || firstMediaA?.tracks?.length || firstMediaA?.track?.length || 0
+      const trackCountB = firstMediaB?.['track-count'] || firstMediaB?.tracks?.length || firstMediaB?.track?.length || 0
       return trackCountB - trackCountA // More tracks = better (descending)
     })
     
