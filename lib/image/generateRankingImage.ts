@@ -217,7 +217,7 @@ export async function generateRankingImage(ranking: RankingData): Promise<void> 
 
   // Strategy 1: Try Share API on mobile (best UX on iOS/Android)
   // Check if Share API supports files (not all browsers do)
-  const shareSupported = navigator.share && navigator.canShare
+  const shareSupported = 'share' in navigator && 'canShare' in navigator
   if (isMobile && shareSupported) {
     try {
       const file = new File([blob], fileName, {
