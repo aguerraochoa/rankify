@@ -894,7 +894,7 @@ function SongRanking({
             Ranking Complete!
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
-            You've ranked <span className="font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{state.ranked.length}</span> songs in <span className="font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{state.totalComparisons}</span> comparisons
+            You&apos;ve ranked <span className="font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{state.ranked.length}</span> songs in <span className="font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{state.totalComparisons}</span> comparisons
           </p>
         </div>
 
@@ -1152,7 +1152,7 @@ function SongRanking({
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  Don't Know This Song
+                  Don&apos;t Know This Song
                 </span>
               </button>
 
