@@ -47,7 +47,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { songs } = body
+    const { songs, name } = body
 
     if (!songs || !Array.isArray(songs)) {
       return NextResponse.json(
@@ -56,7 +56,7 @@ export async function PUT(
       )
     }
 
-    const list = await updateRankedList(user.id, params.id, songs)
+    const list = await updateRankedList(user.id, params.id, songs, name)
     return NextResponse.json({ list })
   } catch (error) {
     console.error('Error updating ranked list:', error)

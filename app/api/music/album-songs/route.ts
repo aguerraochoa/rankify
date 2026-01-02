@@ -7,9 +7,48 @@ export async function GET(request: NextRequest) {
   const albumTitle = searchParams.get('albumTitle')
   const artist = searchParams.get('artist')
 
+  // If releaseGroupId is null but we have albumTitle and artist, try to find the album first
+  if (!releaseGroupId && albumTitle && artist) {
+    try {
+      // Search for the album to get its release-group ID
+      const { searchReleaseGroups } = await import('@/lib/musicbrainz/client')
+      const query = `release:"${albumTitle}" AND artist:"${artist}"`
+      const searchResults = await searchReleaseGroups(query, 10, false)
+      
+      // Find exact match by title and artist (case-insensitive, flexible matching)
+      const normalize = (str: string) => str.toLowerCase().trim()
+      const normalizedTitle = normalize(albumTitle)
+      const normalizedArtist = normalize(artist)
+      
+      const exactMatch = searchResults.find(
+        (album) => {
+          const albumTitleMatch = normalize(album.title) === normalizedTitle ||
+            normalize(album.title).includes(normalizedTitle) ||
+            normalizedTitle.includes(normalize(album.title))
+          const artistMatch = normalize(album.artist).includes(normalizedArtist) ||
+            normalizedArtist.includes(normalize(album.artist))
+          return albumTitleMatch && artistMatch
+        }
+      )
+      
+      if (exactMatch) {
+        // Use the found release-group ID
+        const foundReleaseGroupId = exactMatch.id
+        console.log(`Found album ${albumTitle} by ${artist} with ID: ${foundReleaseGroupId}`)
+        const songs = await getSongsFromReleaseGroup(foundReleaseGroupId, albumTitle, artist)
+        return NextResponse.json({ songs })
+      } else {
+        console.log(`Could not find exact match for album ${albumTitle} by ${artist}`)
+      }
+    } catch (error) {
+      console.error('Error searching for album:', error)
+      // Fall through to return error
+    }
+  }
+
   if (!releaseGroupId) {
     return NextResponse.json(
-      { error: 'releaseGroupId is required' },
+      { error: 'releaseGroupId is required, or albumTitle and artist must be provided' },
       { status: 400 }
     )
   }

@@ -1,16 +1,110 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { BinaryInsertionRanker, type RankingState, type ComparisonResult } from '@/lib/ranking/binaryInsertion'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SongsPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<'select' | 'review' | 'ranking'>('select')
   const [selectedAlbums, setSelectedAlbums] = useState<any[]>([])
   const [selectedSongs, setSelectedSongs] = useState<any[]>([])
+  const [templateSongs, setTemplateSongs] = useState<any[]>([]) // Pre-selected songs from template
+  const [loadingTemplate, setLoadingTemplate] = useState(false)
+
+  // Load template if template query param exists
+  useEffect(() => {
+    const templateId = searchParams.get('template')
+    if (templateId) {
+      loadTemplate(templateId)
+    }
+  }, [searchParams])
+
+  const loadTemplate = async (rankingId: string) => {
+    setLoadingTemplate(true)
+    try {
+      const response = await fetch(`/api/ranked-lists/${rankingId}/template`)
+      if (!response.ok) {
+        throw new Error('Failed to load template')
+      }
+
+      const data = await response.json()
+
+      // Group songs by album to reconstruct albums
+      const albumsMap = new Map<string, {
+        id: string | null
+        title: string | null
+        artist: string
+        coverArtUrl: string | null
+      }>()
+
+      // Process songs and group by album
+      const processedSongs: any[] = []
+      data.songs.forEach((song: any) => {
+        // Create album key (use album_title + artist as key)
+        const albumKey = song.album_title
+          ? `${song.album_title}|${song.artist}`
+          : song.artist
+
+        // Extract album info
+        // Use album_musicbrainz_id as the key if available, otherwise use albumKey
+        const albumMapKey = song.album_musicbrainz_id || albumKey
+        if (!albumsMap.has(albumMapKey)) {
+          albumsMap.set(albumMapKey, {
+            id: song.album_musicbrainz_id || null, // Will be null for old rankings, need to look up
+            title: song.album_title || null,
+            artist: song.artist,
+            coverArtUrl: song.cover_art_url || null,
+          })
+        }
+
+        // Format song for SongReview component
+        // Use album_musicbrainz_id if available, otherwise null (will need to be looked up)
+        processedSongs.push({
+          id: song.musicbrainz_id,
+          title: song.title,
+          artist: song.artist,
+          albumId: song.album_musicbrainz_id || null, // Use null if not available - will be looked up by title/artist
+          albumTitle: song.album_title || null,
+          albumArtist: song.artist,
+          albumCoverArt: song.cover_art_url || null,
+        })
+      })
+
+      // Convert albums map to array
+      const albums = Array.from(albumsMap.values())
+
+      // Set albums and template songs
+      setSelectedAlbums(albums)
+      setTemplateSongs(processedSongs)
+      
+      // Go directly to review step
+      setStep('review')
+    } catch (error) {
+      console.error('Error loading template:', error)
+      alert('Failed to load template. Please try again.')
+      // Fall back to normal flow
+      setStep('select')
+    } finally {
+      setLoadingTemplate(false)
+    }
+  }
+
+  if (loadingTemplate) {
+    return (
+      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Loading template...</p>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   return (
     <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
@@ -54,6 +148,7 @@ export default function SongsPage() {
               setStep('ranking')
             }}
             onBack={() => setStep('select')}
+            preSelectedSongs={templateSongs}
           />
         )}
 
@@ -454,10 +549,12 @@ function SongReview({
   albums,
   onSongsSelected,
   onBack,
+  preSelectedSongs,
 }: {
   albums: any[]
   onSongsSelected: (songs: any[]) => void
   onBack: () => void
+  preSelectedSongs?: any[]
 }) {
   const [songsByAlbum, setSongsByAlbum] = useState<Record<string, any[]>>({})
   const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set())
@@ -504,17 +601,48 @@ function SongReview({
         }
 
         setSongsByAlbum(songsMap)
-        // Select all songs by default
-        // Use composite key (albumId + songId) to handle same song on multiple albums
-        const allSongIds = new Set<string>()
-        Object.entries(songsMap).forEach(([albumId, songs]) => {
-          songs.forEach((song) => {
-            // Create unique key: albumId + songId to handle duplicates across albums
-            const uniqueKey = `${albumId}:${song.id}`
-            allSongIds.add(uniqueKey)
+        
+        // If preSelectedSongs provided, match and select only those songs
+        // Otherwise, select all songs by default
+        const selectedSongIds = new Set<string>()
+        
+        if (preSelectedSongs && preSelectedSongs.length > 0) {
+          // Match template songs with fetched songs
+          // Create a matching function that compares by title, artist, and album
+          const normalizeString = (str: string) => str.toLowerCase().trim()
+          
+          Object.entries(songsMap).forEach(([albumId, songs]) => {
+            songs.forEach((song) => {
+              // Try to match with preSelectedSongs
+              const matched = preSelectedSongs.find((templateSong) => {
+                // Match by title and artist (case-insensitive)
+                const titleMatch = normalizeString(song.title) === normalizeString(templateSong.title)
+                const artistMatch = normalizeString(song.artist) === normalizeString(templateSong.artist)
+                
+                // Also try to match by album (if available)
+                const albumMatch = !templateSong.albumTitle || !song.albumTitle || 
+                  normalizeString(song.albumTitle || '') === normalizeString(templateSong.albumTitle || '')
+                
+                return titleMatch && artistMatch && albumMatch
+              })
+              
+              if (matched) {
+                const uniqueKey = `${albumId}:${song.id}`
+                selectedSongIds.add(uniqueKey)
+              }
+            })
           })
-        })
-        setSelectedSongs(allSongIds)
+        } else {
+          // Select all songs by default
+          Object.entries(songsMap).forEach(([albumId, songs]) => {
+            songs.forEach((song) => {
+              const uniqueKey = `${albumId}:${song.id}`
+              selectedSongIds.add(uniqueKey)
+            })
+          })
+        }
+        
+        setSelectedSongs(selectedSongIds)
       } catch (err) {
         setError('Failed to load songs. Please try again.')
         console.error('Error fetching songs:', err)

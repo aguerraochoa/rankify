@@ -20,6 +20,7 @@ interface RankedList {
   name: string | null
   songs: RankedSong[]
   song_count: number
+  is_public: boolean
   created_at: string
 }
 
@@ -29,12 +30,19 @@ export default function RankingDetailPage() {
   const rankingId = params.id as string
   const [ranking, setRanking] = useState<RankedList | null>(null)
   const [editableSongs, setEditableSongs] = useState<RankedSong[]>([])
+  const [editableName, setEditableName] = useState<string | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false)
+  const [showShareModal, setShowShareModal] = useState(false)
+  const [isTogglingVisibility, setIsTogglingVisibility] = useState(false)
+  const [wasPrivateBeforeShare, setWasPrivateBeforeShare] = useState(false)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -60,6 +68,7 @@ export default function RankingDetailPage() {
         const data = await response.json()
         setRanking(data.list)
         setEditableSongs([...data.list.songs]) // Initialize editable copy
+        setEditableName(data.list.name) // Initialize editable name
       } catch (err: any) {
         setError(err.message || 'Failed to load ranking')
       } finally {
@@ -72,20 +81,42 @@ export default function RankingDetailPage() {
     }
   }, [rankingId, router, supabase.auth])
 
+  // Close more menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMoreMenu) {
+        const target = event.target as HTMLElement
+        if (!target.closest('.more-menu-container')) {
+          setShowMoreMenu(false)
+        }
+      }
+    }
+
+    if (showMoreMenu) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showMoreMenu])
+
   const handleEdit = () => {
     setIsEditing(true)
     setEditableSongs([...ranking!.songs]) // Reset to original when entering edit mode
+    setEditableName(ranking!.name) // Reset to original name
   }
 
   const handleCancel = () => {
     setIsEditing(false)
     setEditableSongs([...ranking!.songs]) // Reset to original
+    setEditableName(ranking!.name) // Reset to original name
     setDraggedIndex(null)
   }
 
   // Check if changes have been made
   const hasChanges = () => {
     if (!ranking || !isEditing) return false
+    
+    // Check if name changed
+    if (ranking.name !== editableName) return true
     
     // Compare lengths
     if (ranking.songs.length !== editableSongs.length) return true
@@ -119,6 +150,7 @@ export default function RankingDetailPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           songs: editableSongs,
+          name: editableName,
         }),
       })
 
@@ -129,6 +161,7 @@ export default function RankingDetailPage() {
       const data = await response.json()
       setRanking(data.list)
       setEditableSongs([...data.list.songs])
+      setEditableName(data.list.name)
       setIsEditing(false)
       setDraggedIndex(null)
     } catch (err: any) {
@@ -195,6 +228,90 @@ export default function RankingDetailPage() {
     } catch (err: any) {
       console.error('Error deleting ranking:', err)
       alert('Failed to delete ranking. Please try again.')
+    }
+  }
+
+  const handleUseAsTemplate = () => {
+    if (!ranking) return
+    // Navigate to songs page with template parameter
+    router.push(`/songs?template=${rankingId}`)
+  }
+
+  const handleToggleVisibility = async () => {
+    if (!ranking) return
+
+    setIsTogglingVisibility(true)
+    try {
+      const response = await fetch(`/api/ranked-lists/${rankingId}/visibility`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          is_public: !ranking.is_public,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update visibility')
+      }
+
+      const data = await response.json()
+      setRanking({ ...ranking, is_public: data.list.is_public })
+    } catch (err: any) {
+      console.error('Error updating visibility:', err)
+      alert('Failed to update visibility. Please try again.')
+    } finally {
+      setIsTogglingVisibility(false)
+    }
+  }
+
+  const handleShare = async () => {
+    if (!ranking) return
+
+    // If ranking is private, warn user that it will become public
+    const wasPrivate = !ranking.is_public
+    if (wasPrivate) {
+      const confirmed = confirm(
+        'This ranking is currently private. Sharing it will make it public and visible to everyone. Do you want to continue?'
+      )
+      if (!confirmed) {
+        return
+      }
+      setWasPrivateBeforeShare(true)
+    }
+
+    setIsGeneratingShare(true)
+    try {
+      const response = await fetch(`/api/ranked-lists/${rankingId}/share`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to generate share link')
+      }
+
+      const data = await response.json()
+      setShareUrl(data.shareUrl)
+      // Update ranking to reflect it's now public
+      setRanking({ ...ranking, is_public: true })
+      setShowShareModal(true)
+    } catch (err: any) {
+      console.error('Error generating share link:', err)
+      alert('Failed to generate share link. Please try again.')
+      setWasPrivateBeforeShare(false)
+    } finally {
+      setIsGeneratingShare(false)
+    }
+  }
+
+  const copyShareLink = async () => {
+    if (!shareUrl) return
+
+    try {
+      await navigator.clipboard.writeText(shareUrl)
+      alert('Share link copied to clipboard!')
+    } catch (err) {
+      console.error('Error copying to clipboard:', err)
+      alert('Failed to copy link. Please copy it manually.')
     }
   }
 
@@ -279,53 +396,164 @@ export default function RankingDetailPage() {
     <main className="min-h-screen bg-gradient-to-br from-[#f5f1e8] via-white to-[#f5f1e8] dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-4 md:p-8">
       <div className="max-w-4xl mx-auto">
         {/* Buttons row - top */}
-        <div className="flex items-center justify-between gap-4 mb-4">
+        <div className="flex items-center justify-between gap-2 md:gap-4 mb-4">
           <Link
             href="/rankings"
-            className="group flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+            className="group flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
           >
             <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2 relative">
             {!isEditing ? (
               <>
+                {/* Use as Template - Now only in More menu */}
+                
+                {/* Public/Private Toggle - Icon only on mobile */}
                 <button
-                  onClick={handleDownloadImage}
-                  disabled={isGeneratingImage}
-                  aria-label="Download ranking as image"
-                  className="w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleToggleVisibility}
+                  disabled={isTogglingVisibility}
+                  className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold transition-all rounded-xl shadow-sm hover:shadow-md border disabled:opacity-50 disabled:cursor-not-allowed ${
+                    ranking?.is_public
+                      ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30'
+                      : 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+                  }`}
+                  title={ranking?.is_public ? 'Make private' : 'Make public'}
                 >
-                  {isGeneratingImage ? (
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                  {isTogglingVisibility ? (
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
+                  ) : ranking?.is_public ? (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      <span className="hidden sm:inline">Public</span>
+                    </>
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                      </svg>
+                      <span className="hidden sm:inline">Private</span>
+                    </>
                   )}
                 </button>
+                
+                {/* Share - Now only in More menu */}
+                
+                {/* Download - Now only in More menu */}
+                
+                {/* Edit - Icon only on mobile */}
                 <button
                   onClick={handleEdit}
-                  className="px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+                  className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+                  title="Edit ranking"
                 >
-                  <span className="flex items-center gap-2">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit
-                  </span>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  <span className="hidden sm:inline">Edit</span>
                 </button>
+                
+                {/* Delete - Icon only on mobile */}
                 <button
                   onClick={handleDelete}
-                  className="px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all rounded-xl shadow-sm hover:shadow-md border border-red-200 dark:border-red-800"
+                  className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all rounded-xl shadow-sm hover:shadow-md border border-red-200 dark:border-red-800"
+                  title="Delete ranking"
                 >
-                  Delete
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  <span className="hidden sm:inline">Delete</span>
                 </button>
+                
+                {/* More Menu Button - Shown on all screen sizes */}
+                <div className="relative more-menu-container">
+                  <button
+                    onClick={() => setShowMoreMenu(!showMoreMenu)}
+                    className={`w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 ${
+                      showMoreMenu ? 'bg-[#dce8d0] dark:bg-[#3a4d2a]/40' : ''
+                    }`}
+                    aria-label="More options"
+                    aria-expanded={showMoreMenu}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                    </svg>
+                  </button>
+                  
+                  {/* More Menu Dropdown */}
+                  {showMoreMenu && (
+                    <>
+                      {/* Backdrop */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowMoreMenu(false)}
+                      ></div>
+                      {/* Menu */}
+                      <div className="absolute right-0 top-12 z-50 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 overflow-hidden">
+                        <button
+                          onClick={() => {
+                            handleShare()
+                            setShowMoreMenu(false)
+                          }}
+                          disabled={isGeneratingShare}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGeneratingShare ? (
+                            <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                            </svg>
+                          )}
+                          <span>{isGeneratingShare ? 'Sharing...' : 'Share'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleDownloadImage()
+                            setShowMoreMenu(false)
+                          }}
+                          disabled={isGeneratingImage}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isGeneratingImage ? (
+                            <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          ) : (
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                          )}
+                          <span>{isGeneratingImage ? 'Downloading...' : 'Download'}</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleUseAsTemplate()
+                            setShowMoreMenu(false)
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors"
+                        >
+                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          Use as Template
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </>
             ) : (
               <>
@@ -365,10 +593,20 @@ export default function RankingDetailPage() {
         
         {/* Title row - below buttons */}
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-            {ranking.name || 'My Ranking'}
-          </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{formattedDate}</p>
+          {isEditing ? (
+            <input
+              type="text"
+              value={editableName || ''}
+              onChange={(e) => setEditableName(e.target.value || null)}
+              placeholder="Enter ranking name..."
+              className="text-3xl md:text-4xl font-bold text-[#4a5d3a] dark:text-[#6b7d5a] mb-2 w-full border-2 border-[#6b7d5a] dark:border-[#6b7d5a] rounded-xl px-4 py-2 bg-white dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#6b7d5a] focus:border-transparent"
+            />
+          ) : (
+            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent mb-2">
+              {ranking.name || 'My Ranking'}
+            </h1>
+          )}
+          <p className="text-sm text-slate-600 dark:text-slate-400">{formattedDate}</p>
         </div>
 
         <div className="mb-6">
@@ -485,6 +723,77 @@ export default function RankingDetailPage() {
           ))}
         </div>
       </div>
+
+      {/* Share Modal */}
+      {showShareModal && shareUrl && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl border-2 border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Share Ranking</h2>
+              <button
+                onClick={() => {
+                  setShowShareModal(false)
+                  setWasPrivateBeforeShare(false) // Reset when closing modal
+                }}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            {wasPrivateBeforeShare && (
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+                <p className="text-sm text-green-800 dark:text-green-400 flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  This ranking was private and is now public. It will be visible to everyone.
+                </p>
+              </div>
+            )}
+            
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
+              Copy this link to share your ranking:
+            </p>
+            
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                type="text"
+                value={shareUrl}
+                readOnly
+                className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-xl text-sm"
+              />
+              <button
+                onClick={copyShareLink}
+                className="px-4 py-2 bg-[#4a5d3a] hover:bg-[#5a6d4a] text-white rounded-xl font-semibold transition-colors"
+              >
+                Copy
+              </button>
+            </div>
+
+            <div className="flex gap-2">
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out my ranking: ${ranking?.name || 'My Ranking'}`)}&url=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-4 py-2 bg-[#1DA1F2] hover:bg-[#1a91da] text-white rounded-xl font-semibold text-center transition-colors"
+              >
+                Share on Twitter
+              </a>
+              <a
+                href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 px-4 py-2 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-xl font-semibold text-center transition-colors"
+              >
+                Share on Facebook
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
