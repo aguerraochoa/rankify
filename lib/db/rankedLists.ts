@@ -51,6 +51,7 @@ export async function saveRankedList(
       name: name || null,
       songs: songsData,
       song_count: rankedSongs.length,
+      is_public: true, // Rankings are public by default
     })
     .select()
     .single()

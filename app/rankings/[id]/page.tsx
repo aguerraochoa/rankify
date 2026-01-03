@@ -17,6 +17,7 @@ interface RankedSong {
 
 interface RankedList {
   id: string
+  user_id: string
   name: string | null
   songs: RankedSong[]
   song_count: number
@@ -43,6 +44,7 @@ export default function RankingDetailPage() {
   const [isTogglingVisibility, setIsTogglingVisibility] = useState(false)
   const [wasPrivateBeforeShare, setWasPrivateBeforeShare] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -56,6 +58,8 @@ export default function RankingDetailPage() {
           router.push('/login')
           return
         }
+
+        setCurrentUserId(user.id)
 
         const response = await fetch(`/api/ranked-lists/${rankingId}`)
         if (!response.ok) {
@@ -409,71 +413,70 @@ export default function RankingDetailPage() {
           <div className="flex items-center gap-1 md:gap-2 relative">
             {!isEditing ? (
               <>
-                {/* Use as Template - Now only in More menu */}
-                
-                {/* Public/Private Toggle - Icon only on mobile */}
-                <button
-                  onClick={handleToggleVisibility}
-                  disabled={isTogglingVisibility}
-                  className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold transition-all rounded-xl shadow-sm hover:shadow-md border disabled:opacity-50 disabled:cursor-not-allowed ${
-                    ranking?.is_public
-                      ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30'
-                      : 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
-                  }`}
-                  title={ranking?.is_public ? 'Make private' : 'Make public'}
-                >
-                  {isTogglingVisibility ? (
-                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : ranking?.is_public ? (
-                    <>
+                {/* Only show owner actions if current user owns the ranking */}
+                {currentUserId && ranking && currentUserId === ranking.user_id && (
+                  <>
+                    {/* Public/Private Toggle - Icon only on mobile */}
+                    <button
+                      onClick={handleToggleVisibility}
+                      disabled={isTogglingVisibility}
+                      className={`flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold transition-all rounded-xl shadow-sm hover:shadow-md border disabled:opacity-50 disabled:cursor-not-allowed ${
+                        ranking?.is_public
+                          ? 'text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30'
+                          : 'text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      }`}
+                      title={ranking?.is_public ? 'Make private' : 'Make public'}
+                    >
+                      {isTogglingVisibility ? (
+                        <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      ) : ranking?.is_public ? (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          <span className="hidden sm:inline">Public</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                          </svg>
+                          <span className="hidden sm:inline">Private</span>
+                        </>
+                      )}
+                    </button>
+                    
+                    {/* Edit - Icon only on mobile */}
+                    <button
+                      onClick={handleEdit}
+                      className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+                      title="Edit ranking"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                       </svg>
-                      <span className="hidden sm:inline">Public</span>
-                    </>
-                  ) : (
-                    <>
+                      <span className="hidden sm:inline">Edit</span>
+                    </button>
+                    
+                    {/* Delete - Icon only on mobile */}
+                    <button
+                      onClick={handleDelete}
+                      className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all rounded-xl shadow-sm hover:shadow-md border border-red-200 dark:border-red-800"
+                      title="Delete ranking"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
-                      <span className="hidden sm:inline">Private</span>
-                    </>
-                  )}
-                </button>
+                      <span className="hidden sm:inline">Delete</span>
+                    </button>
+                  </>
+                )}
                 
-                {/* Share - Now only in More menu */}
-                
-                {/* Download - Now only in More menu */}
-                
-                {/* Edit - Icon only on mobile */}
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
-                  title="Edit ranking"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  <span className="hidden sm:inline">Edit</span>
-                </button>
-                
-                {/* Delete - Icon only on mobile */}
-                <button
-                  onClick={handleDelete}
-                  className="flex items-center gap-1.5 md:gap-2 px-2.5 md:px-4 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all rounded-xl shadow-sm hover:shadow-md border border-red-200 dark:border-red-800"
-                  title="Delete ranking"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  <span className="hidden sm:inline">Delete</span>
-                </button>
-                
-                {/* More Menu Button - Shown on all screen sizes */}
+                {/* More Menu Button - Shown on all screen sizes, but only with owner actions if owned */}
                 <div className="relative more-menu-container">
                   <button
                     onClick={() => setShowMoreMenu(!showMoreMenu)}
@@ -498,58 +501,67 @@ export default function RankingDetailPage() {
                       ></div>
                       {/* Menu */}
                       <div className="absolute right-0 top-12 z-50 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-2xl border-2 border-slate-200 dark:border-slate-700 overflow-hidden">
-                        <button
-                          onClick={() => {
-                            handleShare()
-                            setShowMoreMenu(false)
-                          }}
-                          disabled={isGeneratingShare}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isGeneratingShare ? (
-                            <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
+                        {/* Share - Only available to owner */}
+                        {currentUserId && ranking && currentUserId === ranking.user_id && (
+                          <button
+                            onClick={() => {
+                              handleShare()
+                              setShowMoreMenu(false)
+                            }}
+                            disabled={isGeneratingShare}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isGeneratingShare ? (
+                              <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                              </svg>
+                            )}
+                            <span>{isGeneratingShare ? 'Sharing...' : 'Share'}</span>
+                          </button>
+                        )}
+                        {/* Download - Available for public rankings or if user owns it */}
+                        {ranking && (ranking.is_public || (currentUserId && currentUserId === ranking.user_id)) && (
+                          <button
+                            onClick={() => {
+                              handleDownloadImage()
+                              setShowMoreMenu(false)
+                            }}
+                            disabled={isGeneratingImage}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {isGeneratingImage ? (
+                              <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                            )}
+                            <span>{isGeneratingImage ? 'Downloading...' : 'Download'}</span>
+                          </button>
+                        )}
+                        {/* Use as Template - Available for all public rankings */}
+                        {ranking && ranking.is_public && (
+                          <button
+                            onClick={() => {
+                              handleUseAsTemplate()
+                              setShowMoreMenu(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors"
+                          >
                             <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                             </svg>
-                          )}
-                          <span>{isGeneratingShare ? 'Sharing...' : 'Share'}</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleDownloadImage()
-                            setShowMoreMenu(false)
-                          }}
-                          disabled={isGeneratingImage}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isGeneratingImage ? (
-                            <svg className="animate-spin h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                          ) : (
-                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                          )}
-                          <span>{isGeneratingImage ? 'Downloading...' : 'Download'}</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleUseAsTemplate()
-                            setShowMoreMenu(false)
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors"
-                        >
-                          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                          </svg>
-                          Use as Template
-                        </button>
+                            Use as Template
+                          </button>
+                        )}
                       </div>
                     </>
                   )}

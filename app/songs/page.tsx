@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { BinaryInsertionRanker, type RankingState, type ComparisonResult } from '@/lib/ranking/binaryInsertion'
@@ -561,7 +561,20 @@ function SongReview({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Create a stable key based on album IDs to prevent unnecessary re-fetches
+  const albumsKey = albums.map(a => a.id).sort().join(',')
+  const previousAlbumsKeyRef = useRef<string>('')
+  const previousPreSelectedSongsRef = useRef<any[] | undefined>(undefined)
+  
   useEffect(() => {
+    // Only reset selections if albums actually changed (not just array reference)
+    const albumsChanged = previousAlbumsKeyRef.current !== albumsKey
+    previousAlbumsKeyRef.current = albumsKey
+    
+    // Check if preSelectedSongs actually changed (not just reference)
+    const preSelectedSongsChanged = previousPreSelectedSongsRef.current !== preSelectedSongs
+    previousPreSelectedSongsRef.current = preSelectedSongs
+    
     const fetchSongs = async () => {
       setLoading(true)
       setError(null)
@@ -602,47 +615,52 @@ function SongReview({
 
         setSongsByAlbum(songsMap)
         
-        // If preSelectedSongs provided, match and select only those songs
-        // Otherwise, select all songs by default
-        const selectedSongIds = new Set<string>()
-        
-        if (preSelectedSongs && preSelectedSongs.length > 0) {
-          // Match template songs with fetched songs
-          // Create a matching function that compares by title, artist, and album
-          const normalizeString = (str: string) => str.toLowerCase().trim()
+        // Only reset selections if albums actually changed
+        // This prevents losing user's manual selections when parent re-renders
+        if (albumsChanged) {
+          // If preSelectedSongs provided, match and select only those songs
+          // Otherwise, select all songs by default
+          const selectedSongIds = new Set<string>()
           
-          Object.entries(songsMap).forEach(([albumId, songs]) => {
-            songs.forEach((song) => {
-              // Try to match with preSelectedSongs
-              const matched = preSelectedSongs.find((templateSong) => {
-                // Match by title and artist (case-insensitive)
-                const titleMatch = normalizeString(song.title) === normalizeString(templateSong.title)
-                const artistMatch = normalizeString(song.artist) === normalizeString(templateSong.artist)
+          if (preSelectedSongs && preSelectedSongs.length > 0) {
+            // Match template songs with fetched songs
+            // Create a matching function that compares by title, artist, and album
+            const normalizeString = (str: string) => str.toLowerCase().trim()
+            
+            Object.entries(songsMap).forEach(([albumId, songs]) => {
+              songs.forEach((song) => {
+                // Try to match with preSelectedSongs
+                const matched = preSelectedSongs.find((templateSong) => {
+                  // Match by title and artist (case-insensitive)
+                  const titleMatch = normalizeString(song.title) === normalizeString(templateSong.title)
+                  const artistMatch = normalizeString(song.artist) === normalizeString(templateSong.artist)
+                  
+                  // Also try to match by album (if available)
+                  const albumMatch = !templateSong.albumTitle || !song.albumTitle || 
+                    normalizeString(song.albumTitle || '') === normalizeString(templateSong.albumTitle || '')
+                  
+                  return titleMatch && artistMatch && albumMatch
+                })
                 
-                // Also try to match by album (if available)
-                const albumMatch = !templateSong.albumTitle || !song.albumTitle || 
-                  normalizeString(song.albumTitle || '') === normalizeString(templateSong.albumTitle || '')
-                
-                return titleMatch && artistMatch && albumMatch
+                if (matched) {
+                  const uniqueKey = `${albumId}:${song.id}`
+                  selectedSongIds.add(uniqueKey)
+                }
               })
-              
-              if (matched) {
+            })
+          } else {
+            // Select all songs by default
+            Object.entries(songsMap).forEach(([albumId, songs]) => {
+              songs.forEach((song) => {
                 const uniqueKey = `${albumId}:${song.id}`
                 selectedSongIds.add(uniqueKey)
-              }
+              })
             })
-          })
-        } else {
-          // Select all songs by default
-          Object.entries(songsMap).forEach(([albumId, songs]) => {
-            songs.forEach((song) => {
-              const uniqueKey = `${albumId}:${song.id}`
-              selectedSongIds.add(uniqueKey)
-            })
-          })
+          }
+          
+          setSelectedSongs(selectedSongIds)
         }
-        
-        setSelectedSongs(selectedSongIds)
+        // If albums haven't changed, preserve existing selections
       } catch (err) {
         setError('Failed to load songs. Please try again.')
         console.error('Error fetching songs:', err)
@@ -651,10 +669,11 @@ function SongReview({
       }
     }
 
-    if (albums.length > 0) {
+    // Only fetch songs if albums actually changed
+    if (albums.length > 0 && albumsChanged) {
       fetchSongs()
     }
-  }, [albums])
+  }, [albumsKey, preSelectedSongs])
 
   const toggleSong = (songId: string, albumId: string) => {
     const uniqueKey = `${albumId}:${songId}`
@@ -1197,7 +1216,7 @@ function SongRanking({
                   onClick={() => handleComparison('better')}
                   className="group relative bg-white dark:bg-slate-800 rounded-xl md:rounded-3xl p-3 md:p-8 border-2 md:border-4 border-slate-300 dark:border-slate-600 shadow-lg md:shadow-2xl hover:border-[#6b7d5a] dark:hover:border-[#6b7d5a] hover:shadow-[#4a5d3a]/20 hover:scale-[1.02] transition-all text-left"
                 >
-                  <div className="absolute top-1 right-1 md:top-4 md:right-4 px-1.5 py-0.5 md:px-3 md:py-1 bg-slate-600 text-white rounded-full text-[10px] md:text-xs font-bold">
+                  <div className="absolute top-1 right-1 md:top-4 md:right-4 px-1.5 py-0.5 md:px-3 md:py-1 bg-slate-600 text-white rounded-full text-[10px] md:text-xs font-bold z-20">
                     {state.ranked.length === 0 ? 'SONG A' : 'NEW SONG'}
                   </div>
                   <div className="flex flex-col items-center text-center">
@@ -1251,7 +1270,7 @@ function SongRanking({
                   onClick={() => handleComparison('worse')}
                   className="group relative bg-white dark:bg-slate-800 rounded-xl md:rounded-3xl p-3 md:p-8 border-2 md:border-4 border-slate-300 dark:border-slate-600 shadow-lg md:shadow-2xl hover:border-[#6b7d5a] dark:hover:border-[#6b7d5a] hover:shadow-[#4a5d3a]/20 hover:scale-[1.02] transition-all text-left"
                 >
-                  <div className="absolute top-1 right-1 md:top-4 md:right-4 px-1.5 py-0.5 md:px-3 md:py-1 bg-slate-600 text-white rounded-full text-[10px] md:text-xs font-bold">
+                  <div className="absolute top-1 right-1 md:top-4 md:right-4 px-1.5 py-0.5 md:px-3 md:py-1 bg-slate-600 text-white rounded-full text-[10px] md:text-xs font-bold z-20">
                     {state.ranked.length === 0 ? 'SONG B' : `SONG #${state.currentComparison.position + 1}`}
                   </div>
                   <div className="flex flex-col items-center text-center">

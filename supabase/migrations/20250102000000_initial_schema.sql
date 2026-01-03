@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS public.ranked_lists (
   name TEXT,
   songs JSONB NOT NULL,
   song_count INTEGER NOT NULL,
-  is_public BOOLEAN DEFAULT FALSE NOT NULL,
+  is_public BOOLEAN DEFAULT TRUE NOT NULL,
   share_token TEXT UNIQUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
