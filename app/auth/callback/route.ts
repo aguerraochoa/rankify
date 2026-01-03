@@ -46,8 +46,33 @@ export async function GET(request: Request) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // Redirect to home page - cookies are set by createClient
-    // Add a small query param to force a refresh
+    // Check if user's email is verified
+    // For email/password signups, users need to verify before they can sign in
+    // OAuth providers automatically verify emails
+    if (!user.email_confirmed_at && user.app_metadata?.provider === 'email') {
+      // Email not verified - sign them out and redirect to login
+      await supabase.auth.signOut()
+      const loginUrl = new URL('/login', requestUrl.origin)
+      loginUrl.searchParams.set('error', 'email_not_verified')
+      loginUrl.searchParams.set('details', 'Please verify your email before signing in. Check your inbox for the verification link.')
+      return NextResponse.redirect(loginUrl)
+    }
+
+    // Check if this might be an email verification callback
+    // If the user was just created (recent timestamp) and email is confirmed, it's likely verification
+    const userCreatedRecently = user.created_at && 
+      (Date.now() - new Date(user.created_at).getTime()) < 300000 // within last 5 minutes
+    
+    // If this appears to be an email verification (user just verified), redirect to login with success message
+    // The login page will detect they're logged in and redirect to home, but show the message first
+    if (userCreatedRecently && user.email_confirmed_at && user.app_metadata?.provider === 'email') {
+      const loginUrl = new URL('/login', requestUrl.origin)
+      loginUrl.searchParams.set('verified', 'true')
+      return NextResponse.redirect(loginUrl)
+    }
+    
+    // For OAuth or other flows, redirect to home page or intended destination
+    // Add query params to indicate success
     const redirectUrl = new URL(next, requestUrl.origin)
     redirectUrl.searchParams.set('auth', 'success')
     const response = NextResponse.redirect(redirectUrl)
