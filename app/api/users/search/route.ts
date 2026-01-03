@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { searchUsers } from '@/lib/db/users'
+import { getPublicRankedLists } from '@/lib/db/rankedLists'
 
 // Mark this route as dynamic since it uses cookies for authentication
 export const dynamic = 'force-dynamic'
@@ -29,7 +30,18 @@ export async function GET(request: NextRequest) {
     // Don't return the current user in search results
     const filteredUsers = users.filter((u) => u.id !== user.id)
 
-    return NextResponse.json({ users: filteredUsers })
+    // Add public rankings count for each user
+    const usersWithCounts = await Promise.all(
+      filteredUsers.map(async (userProfile) => {
+        const publicRankings = await getPublicRankedLists(userProfile.id)
+        return {
+          ...userProfile,
+          public_rankings_count: publicRankings.length,
+        }
+      })
+    )
+
+    return NextResponse.json({ users: usersWithCounts })
   } catch (error) {
     console.error('Error searching users:', error)
     return NextResponse.json(

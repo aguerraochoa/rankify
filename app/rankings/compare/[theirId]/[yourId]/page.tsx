@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { compareRankings, type ComparisonResult } from '@/lib/ranking/compareRankings'
 import { generateComparisonImage } from '@/lib/image/generateRankingImage'
@@ -319,9 +320,10 @@ export default function ComparePage() {
                         </svg>
                       </div>
                       {song.cover_art_url && (
-                        <img
+                        <Image
                           src={song.cover_art_url}
                           alt={song.title}
+                          fill
                           className={`absolute inset-0 w-full h-full object-cover ${mobileSideBySide ? 'rounded-lg' : 'rounded-xl'} lg:rounded-xl ${mobileSideBySide ? 'shadow-sm' : 'shadow-md'} lg:shadow-md transition-opacity duration-300 opacity-0`}
                           onError={(e) => {
                             const target = e.currentTarget
@@ -329,13 +331,16 @@ export default function ComparePage() {
                             const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoad={(e) => {
-                            const target = e.currentTarget
-                            target.style.opacity = '1'
-                            const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
-                            if (placeholder) placeholder.style.opacity = '0'
+                          onLoadingComplete={() => {
+                            const container = document.querySelector(`[data-song-container="${song.musicbrainz_id || song.title}"]`)
+                            if (container) {
+                              const img = container.querySelector('img') as HTMLElement
+                              const placeholder = container.querySelector('.song-placeholder') as HTMLElement
+                              if (img) img.style.opacity = '1'
+                              if (placeholder) placeholder.style.opacity = '0'
+                            }
                           }}
-                          loading="lazy"
+                          unoptimized
                         />
                       )}
                     </div>
@@ -368,9 +373,10 @@ export default function ComparePage() {
                             </svg>
                           </div>
                           {song.cover_art_url && (
-                            <img
+                            <Image
                               src={song.cover_art_url}
                               alt={song.title}
+                              fill
                               className={`absolute inset-0 w-full h-full object-cover ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} transition-opacity duration-300 opacity-0`}
                               onError={(e) => {
                                 const target = e.currentTarget
@@ -378,13 +384,12 @@ export default function ComparePage() {
                                 const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '1'
                               }}
-                              onLoad={(e) => {
-                                const target = e.currentTarget
-                                target.style.opacity = '1'
-                                const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                              onLoadingComplete={(img) => {
+                                img.style.opacity = '1'
+                                const placeholder = img.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '0'
                               }}
-                              loading="lazy"
+                              unoptimized
                             />
                           )}
                         </div>
@@ -434,9 +439,10 @@ export default function ComparePage() {
                         </svg>
                       </div>
                       {song.cover_art_url && (
-                        <img
+                        <Image
                           src={song.cover_art_url}
                           alt={song.title}
+                          fill
                           className="absolute inset-0 w-full h-full object-cover rounded-lg lg:rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                           onError={(e) => {
                             const target = e.currentTarget
@@ -444,13 +450,16 @@ export default function ComparePage() {
                             const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoad={(e) => {
-                            const target = e.currentTarget
-                            target.style.opacity = '1'
-                            const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
-                            if (placeholder) placeholder.style.opacity = '0'
+                          onLoadingComplete={() => {
+                            const container = document.querySelector(`[data-song-container="${song.musicbrainz_id || song.title}"]`)
+                            if (container) {
+                              const img = container.querySelector('img') as HTMLElement
+                              const placeholder = container.querySelector('.song-placeholder') as HTMLElement
+                              if (img) img.style.opacity = '1'
+                              if (placeholder) placeholder.style.opacity = '0'
+                            }
                           }}
-                          loading="lazy"
+                          unoptimized
                         />
                       )}
                     </div>
@@ -509,9 +518,10 @@ export default function ComparePage() {
                             </svg>
                           </div>
                           {song.cover_art_url && (
-                            <img
+                            <Image
                               src={song.cover_art_url}
                               alt={song.title}
+                              fill
                               className={`absolute inset-0 w-full h-full object-cover ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} transition-opacity duration-300 opacity-0`}
                               onError={(e) => {
                                 const target = e.currentTarget
@@ -519,13 +529,12 @@ export default function ComparePage() {
                                 const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '1'
                               }}
-                              onLoad={(e) => {
-                                const target = e.currentTarget
-                                target.style.opacity = '1'
-                                const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                              onLoadingComplete={(img) => {
+                                img.style.opacity = '1'
+                                const placeholder = img.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '0'
                               }}
-                              loading="lazy"
+                              unoptimized
                             />
                           )}
                         </div>

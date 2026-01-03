@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { generateRankingImage } from '@/lib/image/generateRankingImage'
 
@@ -734,7 +735,7 @@ export default function RankingDetailPage() {
                   </svg>
                 </div>
               )}
-              <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
+              <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0" data-song-container={song.musicbrainz_id || song.title}>
                 {/* Placeholder - shown by default */}
                 <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
@@ -744,9 +745,10 @@ export default function RankingDetailPage() {
                 </div>
                 {/* Image - overlays placeholder when loaded */}
                 {song.cover_art_url && (
-                  <img
+                  <Image
                     src={song.cover_art_url}
                     alt={song.title}
+                    fill
                     className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                     onError={(e) => {
                       const target = e.currentTarget
@@ -754,13 +756,16 @@ export default function RankingDetailPage() {
                       const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                       if (placeholder) placeholder.style.opacity = '1'
                     }}
-                    onLoad={(e) => {
-                      const target = e.currentTarget
-                      target.style.opacity = '1'
-                      const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
-                      if (placeholder) placeholder.style.opacity = '0'
+                    onLoadingComplete={() => {
+                      const container = document.querySelector(`[data-song-container="${song.musicbrainz_id || song.title}"]`)
+                      if (container) {
+                        const img = container.querySelector('img') as HTMLElement
+                        const placeholder = container.querySelector('.song-placeholder') as HTMLElement
+                        if (img) img.style.opacity = '1'
+                        if (placeholder) placeholder.style.opacity = '0'
+                      }
                     }}
-                    loading="lazy"
+                    unoptimized
                   />
                 )}
               </div>

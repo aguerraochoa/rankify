@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { BinaryInsertionRanker, type RankingState, type ComparisonResult } from '@/lib/ranking/binaryInsertion'
 import { createClient } from '@/lib/supabase/client'
 
@@ -332,9 +333,10 @@ function AlbumSelection({
                       </svg>
                     </div>
                     {album.coverArtUrl && (
-                      <img
+                      <Image
                         src={album.coverArtUrl}
                         alt={album.title}
+                        fill
                         className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-lg transition-opacity duration-300 opacity-0"
                         onError={(e) => {
                           const target = e.currentTarget
@@ -342,13 +344,12 @@ function AlbumSelection({
                           const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '1'
                         }}
-                        onLoad={(e) => {
-                          const target = e.currentTarget
-                          target.style.opacity = '1'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                        onLoadingComplete={(img) => {
+                          img.style.opacity = '1'
+                          const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '0'
                         }}
-                        loading="lazy"
+                        unoptimized
                       />
                     )}
                   </div>
@@ -419,9 +420,10 @@ function AlbumSelection({
                               </svg>
                             </div>
                             {album.coverArtUrl && (
-                              <img
+                              <Image
                                 src={album.coverArtUrl}
                                 alt={album.title}
+                                fill
                                 className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
                                 onError={(e) => {
                                   const target = e.currentTarget
@@ -429,13 +431,12 @@ function AlbumSelection({
                                   const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
                                   if (placeholder) placeholder.style.opacity = '1'
                                 }}
-                                onLoad={(e) => {
-                                  const target = e.currentTarget
-                                  target.style.opacity = '1'
-                                  const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                                onLoadingComplete={(img) => {
+                                  img.style.opacity = '1'
+                                  const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                                   if (placeholder) placeholder.style.opacity = '0'
                                 }}
-                                loading="lazy"
+                                unoptimized
                               />
                             )}
                           </div>
@@ -502,9 +503,10 @@ function AlbumSelection({
                     </div>
                     {/* Image - overlays placeholder when loaded */}
                     {album.coverArtUrl && (
-                      <img
+                      <Image
                         src={album.coverArtUrl}
                         alt={album.title}
+                        fill
                         className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                         onError={(e) => {
                           const target = e.currentTarget
@@ -514,15 +516,14 @@ function AlbumSelection({
                             placeholder.style.opacity = '1'
                           }
                         }}
-                        onLoad={(e) => {
-                          const target = e.currentTarget
-                          target.style.opacity = '1'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                        onLoadingComplete={(img) => {
+                          img.style.opacity = '1'
+                          const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) {
                             placeholder.style.opacity = '0'
                           }
                         }}
-                        loading="lazy"
+                        unoptimized
                       />
                     )}
                   </div>
@@ -791,9 +792,10 @@ function SongReview({
                       </svg>
                     </div>
                     {album.coverArtUrl && (
-                      <img
+                      <Image
                         src={album.coverArtUrl}
                         alt={album.title}
+                        fill
                         className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                         onError={(e) => {
                           const target = e.currentTarget
@@ -801,13 +803,12 @@ function SongReview({
                           const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '1'
                         }}
-                        onLoad={(e) => {
-                          const target = e.currentTarget
-                          target.style.opacity = '1'
-                          const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
+                        onLoadingComplete={(img) => {
+                          img.style.opacity = '1'
+                          const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '0'
                         }}
-                        loading="lazy"
+                        unoptimized
                       />
                     )}
                   </div>
@@ -1059,10 +1060,13 @@ function SongRanking({
                     #{index + 1}
                   </div>
                   {song.coverArtUrl && (
-                    <img
+                    <Image
                       src={song.coverArtUrl}
                       alt={song.title}
+                      width={64}
+                      height={64}
                       className="w-16 h-16 object-cover rounded-xl shadow-md flex-shrink-0"
+                      unoptimized
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -1229,9 +1233,10 @@ function SongRanking({
                         </svg>
                       </div>
                       {state.currentComparison.newSong.coverArtUrl && (
-                        <img
+                        <Image
                           src={state.currentComparison.newSong.coverArtUrl}
                           alt={state.currentComparison.newSong.title}
+                          fill
                           className="w-20 h-20 md:w-48 md:h-48 object-cover rounded-lg md:rounded-2xl shadow-md md:shadow-xl transition-opacity duration-300 opacity-0 absolute inset-0"
                           onError={(e) => {
                             const target = e.currentTarget
@@ -1239,13 +1244,12 @@ function SongRanking({
                             const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoad={(e) => {
-                            const target = e.currentTarget
-                            target.style.opacity = '1'
-                            const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
+                          onLoadingComplete={(img) => {
+                            img.style.opacity = '1'
+                            const placeholder = img.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '0'
                           }}
-                          loading="lazy"
+                          unoptimized
                         />
                       )}
                     </div>
@@ -1282,9 +1286,10 @@ function SongRanking({
                         </svg>
                       </div>
                       {state.currentComparison.comparedSong.coverArtUrl && (
-                        <img
+                        <Image
                           src={state.currentComparison.comparedSong.coverArtUrl}
                           alt={state.currentComparison.comparedSong.title}
+                          fill
                           className="w-20 h-20 md:w-48 md:h-48 object-cover rounded-lg md:rounded-2xl shadow-md md:shadow-xl transition-opacity duration-300 opacity-0 absolute inset-0"
                           onError={(e) => {
                             const target = e.currentTarget
@@ -1292,13 +1297,12 @@ function SongRanking({
                             const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoad={(e) => {
-                            const target = e.currentTarget
-                            target.style.opacity = '1'
-                            const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
+                          onLoadingComplete={(img) => {
+                            img.style.opacity = '1'
+                            const placeholder = img.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '0'
                           }}
-                          loading="lazy"
+                          unoptimized
                         />
                       )}
                     </div>

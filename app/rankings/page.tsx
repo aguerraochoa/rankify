@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 
 interface RankedList {
@@ -230,9 +231,10 @@ export default function RankingsPage() {
                             </div>
                             {/* Image - overlays placeholder when loaded */}
                             {song.cover_art_url && (
-                              <img
+                              <Image
                                 src={song.cover_art_url}
                                 alt={song.title}
+                                fill
                                 className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-md transition-opacity duration-300 opacity-0"
                                 onError={(e) => {
                                   const target = e.currentTarget
@@ -240,13 +242,12 @@ export default function RankingsPage() {
                                   const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                   if (placeholder) placeholder.style.opacity = '1'
                                 }}
-                                onLoad={(e) => {
-                                  const target = e.currentTarget
-                                  target.style.opacity = '1'
-                                  const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                                onLoadingComplete={(img) => {
+                                  img.style.opacity = '1'
+                                  const placeholder = img.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                   if (placeholder) placeholder.style.opacity = '0'
                                 }}
-                                loading="lazy"
+                                unoptimized
                               />
                             )}
                           </div>

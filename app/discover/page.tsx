@@ -11,6 +11,7 @@ interface User {
   username: string | null
   display_name: string | null
   bio: string | null
+  public_rankings_count?: number
 }
 
 export default function DiscoverPage() {
@@ -20,7 +21,7 @@ export default function DiscoverPage() {
   const [users, setUsers] = useState<User[]>([])
   const [followingUsers, setFollowingUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(false)
-  const [loadingFollowing, setLoadingFollowing] = useState(false)
+  const [loadingFollowing, setLoadingFollowing] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const supabase = createClient()
 
@@ -193,7 +194,7 @@ export default function DiscoverPage() {
         {activeTab === 'search' && (
           <>
             {users.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {users.map((user) => (
                   <Link
                     key={user.id}
@@ -201,23 +202,31 @@ export default function DiscoverPage() {
                     className="group bg-white dark:bg-slate-800 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-[#6b7d5a] dark:hover:border-[#6b7d5a] shadow-lg hover:shadow-xl transition-all card-hover"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-full font-bold text-white text-xl shadow-lg flex-shrink-0">
+                      <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-full font-bold text-white text-xl md:text-2xl shadow-lg flex-shrink-0">
                         {(user.display_name || user.username || user.email || 'U').charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-1 truncate">
+                        <h3 className="font-bold text-lg md:text-xl text-slate-900 dark:text-slate-100 mb-1 truncate md:break-words">
                           {user.display_name || user.username || user.email || 'User'}
                         </h3>
                         {user.username && user.username !== user.display_name && (
-                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">@{user.username}</p>
+                          <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mb-2 break-words">@{user.username}</p>
                         )}
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-4 h-4 text-[#4a5d3a] dark:text-[#6b7d5a] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                          </svg>
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">
+                            {user.public_rankings_count || 0} public {user.public_rankings_count === 1 ? 'ranking' : 'rankings'}
+                          </p>
+                        </div>
                         {user.bio && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{user.bio}</p>
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 line-clamp-2">{user.bio}</p>
                         )}
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <span className="text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] group-hover:text-[#5a6d4a] dark:group-hover:text-[#7b8d6a] transition-colors">
+                      <span className="text-sm md:text-base font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] group-hover:text-[#5a6d4a] dark:group-hover:text-[#7b8d6a] transition-colors">
                         View Profile →
                       </span>
                     </div>
@@ -244,7 +253,7 @@ export default function DiscoverPage() {
                 <p className="text-slate-600 dark:text-slate-400 text-lg">Loading following list...</p>
               </div>
             ) : followingUsers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {followingUsers.map((user) => (
                   <Link
                     key={user.id}
@@ -252,23 +261,31 @@ export default function DiscoverPage() {
                     className="group bg-white dark:bg-slate-800 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-[#6b7d5a] dark:hover:border-[#6b7d5a] shadow-lg hover:shadow-xl transition-all card-hover"
                   >
                     <div className="flex items-start gap-4">
-                      <div className="w-16 h-16 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-full font-bold text-white text-xl shadow-lg flex-shrink-0">
+                      <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-full font-bold text-white text-xl md:text-2xl shadow-lg flex-shrink-0">
                         {(user.display_name || user.username || user.email || 'U').charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-1 truncate">
+                        <h3 className="font-bold text-lg md:text-xl text-slate-900 dark:text-slate-100 mb-1 truncate md:break-words">
                           {user.display_name || user.username || user.email || 'User'}
                         </h3>
                         {user.username && user.username !== user.display_name && (
-                          <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">@{user.username}</p>
+                          <p className="text-sm md:text-base text-slate-500 dark:text-slate-400 mb-2 break-words">@{user.username}</p>
                         )}
+                        <div className="flex items-center gap-2 mb-2">
+                          <svg className="w-4 h-4 text-[#4a5d3a] dark:text-[#6b7d5a] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                          </svg>
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400">
+                            {user.public_rankings_count || 0} public {user.public_rankings_count === 1 ? 'ranking' : 'rankings'}
+                          </p>
+                        </div>
                         {user.bio && (
-                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{user.bio}</p>
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 line-clamp-2">{user.bio}</p>
                         )}
                       </div>
                     </div>
                     <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <span className="text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] group-hover:text-[#5a6d4a] dark:group-hover:text-[#7b8d6a] transition-colors">
+                      <span className="text-sm md:text-base font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] group-hover:text-[#5a6d4a] dark:group-hover:text-[#7b8d6a] transition-colors">
                         View Profile →
                       </span>
                     </div>
