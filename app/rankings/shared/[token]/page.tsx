@@ -67,7 +67,7 @@ export default function SharedRankingPage() {
   if (loading) {
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
             <p className="text-slate-600 dark:text-slate-400 text-lg">Loading ranking...</p>
@@ -80,7 +80,7 @@ export default function SharedRankingPage() {
   if (error || !ranking) {
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

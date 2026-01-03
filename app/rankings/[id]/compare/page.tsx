@@ -63,7 +63,7 @@ export default function CompareSelectionPage() {
   if (loading) {
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
             <p className="text-slate-600 dark:text-slate-400 text-lg">Loading your rankings...</p>
@@ -76,7 +76,7 @@ export default function CompareSelectionPage() {
   if (error) {
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
             <Link

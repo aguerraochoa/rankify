@@ -15,7 +15,7 @@ interface User {
 
 export default function DiscoverPage() {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'search' | 'following'>('search')
+  const [activeTab, setActiveTab] = useState<'search' | 'following'>('following')
   const [searchQuery, setSearchQuery] = useState('')
   const [users, setUsers] = useState<User[]>([])
   const [followingUsers, setFollowingUsers] = useState<User[]>([])
@@ -113,19 +113,6 @@ export default function DiscoverPage() {
         {/* Tabs */}
         <div className="flex items-center gap-2 mb-6 border-b-2 border-slate-200 dark:border-slate-700">
           <button
-            onClick={() => setActiveTab('search')}
-            className={`px-6 py-3 font-semibold transition-all relative ${
-              activeTab === 'search'
-                ? 'text-[#4a5d3a] dark:text-[#6b7d5a]'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-            }`}
-          >
-            Search
-            {activeTab === 'search' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4a5d3a] dark:bg-[#6b7d5a]"></div>
-            )}
-          </button>
-          <button
             onClick={() => {
               setActiveTab('following')
               loadFollowing() // Refresh following list when switching to this tab
@@ -143,6 +130,19 @@ export default function DiscoverPage() {
               </span>
             )}
             {activeTab === 'following' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4a5d3a] dark:bg-[#6b7d5a]"></div>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('search')}
+            className={`px-6 py-3 font-semibold transition-all relative ${
+              activeTab === 'search'
+                ? 'text-[#4a5d3a] dark:text-[#6b7d5a]'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+            }`}
+          >
+            Search
+            {activeTab === 'search' && (
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4a5d3a] dark:bg-[#6b7d5a]"></div>
             )}
           </button>

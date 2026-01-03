@@ -46,6 +46,7 @@ export default function ComparePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isGeneratingImage, setIsGeneratingImage] = useState(false)
+  const [mobileSideBySide, setMobileSideBySide] = useState(false)
   const supabase = createClient()
 
   useEffect(() => {
@@ -244,7 +245,29 @@ export default function ComparePage() {
             <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
               Comparison
             </h1>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
+              {/* Mobile View Toggle - Only visible on mobile */}
+              <button
+                onClick={() => setMobileSideBySide(!mobileSideBySide)}
+                className="lg:hidden flex items-center gap-1.5 px-2.5 py-2 text-xs font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-lg shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+                title={mobileSideBySide ? "Switch to stacked view" : "Switch to side-by-side view"}
+              >
+                {mobileSideBySide ? (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                    <span className="hidden xs:inline">Stacked</span>
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+                    </svg>
+                    <span className="hidden xs:inline">Side-by-side</span>
+                  </>
+                )}
+              </button>
               <button
                 onClick={handleDownloadImage}
                 disabled={isGeneratingImage}
@@ -264,34 +287,34 @@ export default function ComparePage() {
         </div>
 
         {/* Side-by-Side Lists - Only Shared Songs */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className={`grid ${mobileSideBySide ? 'grid-cols-2' : 'grid-cols-1'} lg:grid-cols-2 ${mobileSideBySide ? 'gap-2' : 'gap-6'} lg:gap-6 mb-8`}>
           {/* Your Ranking - Shared Songs Only */}
-          <div>
-            <div className="mb-4 flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-full font-bold text-white shadow-lg">
+          <div className="min-w-0">
+            <div className={`${mobileSideBySide ? 'mb-2' : 'mb-4'} lg:mb-4 flex items-center ${mobileSideBySide ? 'gap-1.5' : 'gap-3'} lg:gap-3`}>
+              <div className={`${mobileSideBySide ? 'w-6 h-6' : 'w-10 h-10'} lg:w-10 lg:h-10 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-full font-bold text-white ${mobileSideBySide ? 'text-xs' : 'text-base'} lg:text-base shadow-lg flex-shrink-0`}>
                 {(getYourDisplayName().charAt(0).toUpperCase())}
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="min-w-0 flex-1">
+                <h2 className={`${mobileSideBySide ? 'text-xs' : 'text-xl'} lg:text-xl font-bold text-slate-900 dark:text-slate-100 truncate`}>
                   {yourRanking.name || 'Your Ranking'}
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{getYourDisplayName()}</p>
+                <p className={`${mobileSideBySide ? 'text-[9px]' : 'text-sm'} lg:text-sm text-slate-500 dark:text-slate-400 truncate`}>{getYourDisplayName()}</p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className={mobileSideBySide ? 'space-y-1.5 lg:space-y-3' : 'space-y-3'}>
               {yourSharedSongs.map((song, index) => {
                 return (
                   <div
                     key={index}
-                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all"
+                    className={`flex items-center ${mobileSideBySide ? 'gap-1.5 lg:gap-4 p-1.5 lg:p-4 rounded-lg lg:rounded-2xl border lg:border-2 shadow-sm lg:shadow-lg hover:shadow-md lg:hover:shadow-xl' : 'gap-4 p-4 rounded-2xl border-2 shadow-lg hover:shadow-xl'} bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all`}
                   >
-                    <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] rounded-xl font-bold text-white text-base md:text-xl shadow-lg flex-shrink-0">
+                    <div className={`${mobileSideBySide ? 'w-6 h-6' : 'w-16 h-16'} lg:w-16 lg:h-16 flex items-center justify-center bg-gradient-to-br from-[#4a5d3a] to-[#6b7d5a] ${mobileSideBySide ? 'rounded' : 'rounded-xl'} lg:rounded-xl font-bold text-white ${mobileSideBySide ? 'text-[10px]' : 'text-xl'} lg:text-xl ${mobileSideBySide ? 'shadow-md' : 'shadow-lg'} lg:shadow-lg flex-shrink-0`}>
                       #{index + 1}
                     </div>
-                    <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
-                      <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
+                    <div className={`relative ${mobileSideBySide ? 'w-6 h-6' : 'w-16 h-16'} lg:w-16 lg:h-16 flex-shrink-0 ${mobileSideBySide ? 'hidden lg:block' : 'block'}`}>
+                      <div className={`song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded-lg' : 'rounded-xl'} lg:rounded-xl ${mobileSideBySide ? 'shadow-sm' : 'shadow-md'} lg:shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300`}>
                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
-                        <svg className="w-7 h-7 md:w-8 md:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className={`${mobileSideBySide ? 'w-4 h-4' : 'w-8 h-8'} lg:w-8 lg:h-8 text-white relative z-10`} fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                         </svg>
                       </div>
@@ -299,7 +322,7 @@ export default function ComparePage() {
                         <img
                           src={song.cover_art_url}
                           alt={song.title}
-                          className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                          className={`absolute inset-0 w-full h-full object-cover ${mobileSideBySide ? 'rounded-lg' : 'rounded-xl'} lg:rounded-xl ${mobileSideBySide ? 'shadow-sm' : 'shadow-md'} lg:shadow-md transition-opacity duration-300 opacity-0`}
                           onError={(e) => {
                             const target = e.currentTarget
                             target.style.opacity = '0'
@@ -317,29 +340,80 @@ export default function ComparePage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 truncate">{song.title}</p>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">{song.artist}</p>
+                      <p className={`font-bold ${mobileSideBySide ? 'text-[10px]' : 'text-lg'} lg:text-lg text-slate-900 dark:text-slate-100 truncate`}>{song.title}</p>
+                      <p className={`${mobileSideBySide ? 'text-[9px]' : 'text-base'} lg:text-base text-slate-600 dark:text-slate-400 truncate ${mobileSideBySide ? 'hidden lg:block' : 'block'}`}>{song.artist}</p>
                     </div>
                   </div>
                 )
               })}
             </div>
+            
+            {/* Only in Your List - Below Your Ranking */}
+            {comparison.onlyInYourList.length > 0 && (
+              <div className={mobileSideBySide ? 'mt-3 lg:mt-4' : 'mt-4'}>
+                <h2 className={`${mobileSideBySide ? 'text-[10px] lg:text-xl mb-1.5 lg:mb-4' : 'text-xl mb-4'} font-bold text-slate-900 dark:text-slate-100`}>
+                  Only in Your Ranking
+                </h2>
+                <div className={mobileSideBySide ? 'space-y-1 lg:space-y-3' : 'space-y-3'}>
+                  {comparison.onlyInYourList.map((song, index) => {
+                    return (
+                      <div
+                        key={index}
+                        className={`flex items-center ${mobileSideBySide ? 'gap-1.5 lg:gap-4 p-1.5 lg:p-4 rounded lg:rounded-2xl border lg:border-2 shadow-sm lg:shadow-md' : 'gap-4 p-4 rounded-2xl border-2 shadow-md'} bg-white dark:bg-slate-800 border-orange-300 dark:border-orange-700`}
+                      >
+                        <div className={`relative ${mobileSideBySide ? 'w-4 h-4 lg:w-16 lg:h-16 hidden lg:block' : 'w-16 h-16'} flex-shrink-0`}>
+                          <div className={`song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} flex items-center justify-center overflow-hidden`}>
+                            <svg className={mobileSideBySide ? 'w-3 h-3 lg:w-8 lg:h-8' : 'w-8 h-8'} fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                            </svg>
+                          </div>
+                          {song.cover_art_url && (
+                            <img
+                              src={song.cover_art_url}
+                              alt={song.title}
+                              className={`absolute inset-0 w-full h-full object-cover ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} transition-opacity duration-300 opacity-0`}
+                              onError={(e) => {
+                                const target = e.currentTarget
+                                target.style.opacity = '0'
+                                const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                                if (placeholder) placeholder.style.opacity = '1'
+                              }}
+                              onLoad={(e) => {
+                                const target = e.currentTarget
+                                target.style.opacity = '1'
+                                const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
+                                if (placeholder) placeholder.style.opacity = '0'
+                              }}
+                              loading="lazy"
+                            />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-bold ${mobileSideBySide ? 'text-[9px]' : 'text-lg'} lg:text-lg text-slate-900 dark:text-slate-100 truncate`}>{song.title}</p>
+                          <p className={`${mobileSideBySide ? 'text-[8px]' : 'text-base'} lg:text-base text-slate-600 dark:text-slate-400 truncate ${mobileSideBySide ? 'hidden lg:block' : 'block'}`}>{song.artist}</p>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Their Ranking - Shared Songs Only */}
-          <div>
-            <div className="mb-4 flex items-center gap-3">
-              <div className="w-10 h-10 flex items-center justify-center bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-full font-bold text-white shadow-lg">
+          <div className="min-w-0">
+            <div className={`${mobileSideBySide ? 'mb-2' : 'mb-4'} lg:mb-4 flex items-center ${mobileSideBySide ? 'gap-1.5' : 'gap-3'} lg:gap-3`}>
+              <div className={`${mobileSideBySide ? 'w-6 h-6' : 'w-10 h-10'} lg:w-10 lg:h-10 flex items-center justify-center bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-full font-bold text-white ${mobileSideBySide ? 'text-xs' : 'text-base'} lg:text-base shadow-lg flex-shrink-0`}>
                 {(getTheirDisplayName().charAt(0).toUpperCase())}
               </div>
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+              <div className="min-w-0 flex-1">
+                <h2 className={`${mobileSideBySide ? 'text-xs' : 'text-xl'} lg:text-xl font-bold text-slate-900 dark:text-slate-100 truncate`}>
                   {theirRanking.name || 'Their Ranking'}
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">{getTheirDisplayName()}</p>
+                <p className={`${mobileSideBySide ? 'text-[9px]' : 'text-sm'} lg:text-sm text-slate-500 dark:text-slate-400 truncate`}>{getTheirDisplayName()}</p>
               </div>
             </div>
-            <div className="space-y-3">
+            <div className={mobileSideBySide ? 'space-y-1.5 lg:space-y-3' : 'space-y-3'}>
               {theirSharedSongs.map((song, index) => {
                 const songId = getSongId(song)
                 const indicator = theirSongIndicators.get(songId)
@@ -347,15 +421,15 @@ export default function ComparePage() {
                 return (
                   <div
                     key={index}
-                    className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all"
+                    className={`flex items-center ${mobileSideBySide ? 'gap-1.5 lg:gap-4 p-1.5 lg:p-4 rounded-lg lg:rounded-2xl border lg:border-2 shadow-sm lg:shadow-lg hover:shadow-md lg:hover:shadow-xl' : 'gap-4 p-4 rounded-2xl border-2 shadow-lg hover:shadow-xl'} bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 transition-all`}
                   >
-                    <div className="w-12 h-12 md:w-16 md:h-16 flex items-center justify-center bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl font-bold text-white text-base md:text-xl shadow-lg flex-shrink-0">
+                    <div className={`${mobileSideBySide ? 'w-6 h-6' : 'w-16 h-16'} lg:w-16 lg:h-16 flex items-center justify-center bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded' : 'rounded-xl'} lg:rounded-xl font-bold text-white ${mobileSideBySide ? 'text-[10px]' : 'text-xl'} lg:text-xl ${mobileSideBySide ? 'shadow-md' : 'shadow-lg'} lg:shadow-lg flex-shrink-0`}>
                       #{index + 1}
                     </div>
-                    <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
-                      <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
+                    <div className={`relative ${mobileSideBySide ? 'w-6 h-6' : 'w-16 h-16'} lg:w-16 lg:h-16 flex-shrink-0 ${mobileSideBySide ? 'hidden lg:block' : 'block'}`}>
+                      <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg lg:rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
-                        <svg className="w-7 h-7 md:w-8 md:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 lg:w-8 lg:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                         </svg>
                       </div>
@@ -363,7 +437,7 @@ export default function ComparePage() {
                         <img
                           src={song.cover_art_url}
                           alt={song.title}
-                          className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                          className="absolute inset-0 w-full h-full object-cover rounded-lg lg:rounded-xl shadow-md transition-opacity duration-300 opacity-0"
                           onError={(e) => {
                             const target = e.currentTarget
                             target.style.opacity = '0'
@@ -381,30 +455,30 @@ export default function ComparePage() {
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 truncate">{song.title}</p>
-                      <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">{song.artist}</p>
+                      <p className={`font-bold ${mobileSideBySide ? 'text-[10px]' : 'text-lg'} lg:text-lg text-slate-900 dark:text-slate-100 truncate`}>{song.title}</p>
+                      <p className={`${mobileSideBySide ? 'text-[9px]' : 'text-base'} lg:text-base text-slate-600 dark:text-slate-400 truncate ${mobileSideBySide ? 'hidden lg:block' : 'block'}`}>{song.artist}</p>
                     </div>
                     {/* Position Indicator */}
                     {indicator && (
                       <div className="flex-shrink-0">
                         {indicator.indicator === 'up' && (
-                          <div className="flex items-center gap-1 text-green-600 dark:text-green-400 font-bold text-lg">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className={`flex items-center ${mobileSideBySide ? 'gap-0.5 lg:gap-1 text-xs lg:text-lg' : 'gap-1 text-lg'} text-green-600 dark:text-green-400 font-bold`}>
+                            <svg className={`${mobileSideBySide ? 'w-3 h-3 lg:w-6 lg:h-6' : 'w-6 h-6'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
                             </svg>
-                            <span>{indicator.diffAmount}</span>
+                            <span className={`${mobileSideBySide ? 'text-[10px] lg:text-base' : 'text-base'}`}>{indicator.diffAmount}</span>
                           </div>
                         )}
                         {indicator.indicator === 'down' && (
-                          <div className="flex items-center gap-1 text-red-600 dark:text-red-400 font-bold text-lg">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <div className={`flex items-center ${mobileSideBySide ? 'gap-0.5 lg:gap-1 text-xs lg:text-lg' : 'gap-1 text-lg'} text-red-600 dark:text-red-400 font-bold`}>
+                            <svg className={`${mobileSideBySide ? 'w-3 h-3 lg:w-6 lg:h-6' : 'w-6 h-6'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                             </svg>
-                            <span>{indicator.diffAmount}</span>
+                            <span className={`${mobileSideBySide ? 'text-[10px] lg:text-base' : 'text-base'}`}>{indicator.diffAmount}</span>
                           </div>
                         )}
                         {indicator.indicator === 'same' && (
-                          <div className="text-slate-500 dark:text-slate-400 font-bold text-xl">
+                          <div className={`text-slate-500 dark:text-slate-400 font-bold ${mobileSideBySide ? 'text-sm lg:text-xl' : 'text-xl'}`}>
                             =
                           </div>
                         )}
@@ -414,81 +488,23 @@ export default function ComparePage() {
                 )
               })}
             </div>
-          </div>
-        </div>
-
-        {/* Unique Songs Sections */}
-        {(comparison.onlyInYourList.length > 0 || comparison.onlyInTheirList.length > 0) && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Only in Your List */}
-            {comparison.onlyInYourList.length > 0 && (
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
-                  Only in Your Ranking
-                </h2>
-                <div className="space-y-3">
-                  {comparison.onlyInYourList.map((song, index) => {
-                    return (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 border-orange-300 dark:border-orange-700 shadow-md"
-                      >
-                        <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
-                          <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
-                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
-                            <svg className="w-7 h-7 md:w-8 md:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
-                            </svg>
-                          </div>
-                          {song.cover_art_url && (
-                            <img
-                              src={song.cover_art_url}
-                              alt={song.title}
-                              className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
-                              onError={(e) => {
-                                const target = e.currentTarget
-                                target.style.opacity = '0'
-                                const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
-                                if (placeholder) placeholder.style.opacity = '1'
-                              }}
-                              onLoad={(e) => {
-                                const target = e.currentTarget
-                                target.style.opacity = '1'
-                                const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
-                                if (placeholder) placeholder.style.opacity = '0'
-                              }}
-                              loading="lazy"
-                            />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 truncate">{song.title}</p>
-                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">{song.artist}</p>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Only in Their List */}
+            
+            {/* Only in Their List - Below Their Ranking */}
             {comparison.onlyInTheirList.length > 0 && (
-              <div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              <div className={mobileSideBySide ? 'mt-3 lg:mt-4' : 'mt-4'}>
+                <h2 className={`${mobileSideBySide ? 'text-[10px] lg:text-xl mb-1.5 lg:mb-4' : 'text-xl mb-4'} font-bold text-slate-900 dark:text-slate-100`}>
                   Only in Their Ranking
                 </h2>
-                <div className="space-y-3">
+                <div className={mobileSideBySide ? 'space-y-1 lg:space-y-3' : 'space-y-3'}>
                   {comparison.onlyInTheirList.map((song, index) => {
                     return (
                       <div
                         key={index}
-                        className="flex items-center gap-3 md:gap-4 p-3 md:p-4 bg-white dark:bg-slate-800 rounded-2xl border-2 border-orange-300 dark:border-orange-700 shadow-md"
+                        className={`flex items-center ${mobileSideBySide ? 'gap-1.5 lg:gap-4 p-1.5 lg:p-4 rounded lg:rounded-2xl border lg:border-2 shadow-sm lg:shadow-md' : 'gap-4 p-4 rounded-2xl border-2 shadow-md'} bg-white dark:bg-slate-800 border-orange-300 dark:border-orange-700`}
                       >
-                        <div className="relative w-14 h-14 md:w-16 md:h-16 flex-shrink-0">
-                          <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
-                            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
-                            <svg className="w-7 h-7 md:w-8 md:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
+                        <div className={`relative ${mobileSideBySide ? 'w-4 h-4 lg:w-16 lg:h-16 hidden lg:block' : 'w-16 h-16'} flex-shrink-0`}>
+                          <div className={`song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} flex items-center justify-center overflow-hidden`}>
+                            <svg className={mobileSideBySide ? 'w-3 h-3 lg:w-8 lg:h-8' : 'w-8 h-8'} fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                             </svg>
                           </div>
@@ -496,7 +512,7 @@ export default function ComparePage() {
                             <img
                               src={song.cover_art_url}
                               alt={song.title}
-                              className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-md transition-opacity duration-300 opacity-0"
+                              className={`absolute inset-0 w-full h-full object-cover ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} transition-opacity duration-300 opacity-0`}
                               onError={(e) => {
                                 const target = e.currentTarget
                                 target.style.opacity = '0'
@@ -514,8 +530,8 @@ export default function ComparePage() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-base md:text-lg text-slate-900 dark:text-slate-100 truncate">{song.title}</p>
-                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-400 truncate">{song.artist}</p>
+                          <p className={`font-bold ${mobileSideBySide ? 'text-[9px]' : 'text-lg'} lg:text-lg text-slate-900 dark:text-slate-100 truncate`}>{song.title}</p>
+                          <p className={`${mobileSideBySide ? 'text-[8px]' : 'text-base'} lg:text-base text-slate-600 dark:text-slate-400 truncate ${mobileSideBySide ? 'hidden lg:block' : 'block'}`}>{song.artist}</p>
                         </div>
                       </div>
                     )
@@ -524,7 +540,7 @@ export default function ComparePage() {
               </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </main>
   )
