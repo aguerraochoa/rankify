@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { UserProfile } from './users'
 
 export interface Follow {
   follower_id: string
@@ -147,5 +148,46 @@ export async function getFollowCounts(userId: string): Promise<{
     following: followingResult.count || 0,
     followers: followersResult.count || 0,
   }
+}
+
+/**
+ * Get users that a user is following with full profile details
+ */
+export async function getFollowingUsers(userId: string): Promise<UserProfile[]> {
+  const supabase = await createClient()
+
+  // First get the following IDs
+  const { data: followsData, error: followsError } = await supabase
+    .from('follows')
+    .select('following_id, created_at')
+    .eq('follower_id', userId)
+    .order('created_at', { ascending: false })
+
+  if (followsError) {
+    console.error('Error fetching following:', followsError)
+    throw followsError
+  }
+
+  if (!followsData || followsData.length === 0) {
+    return []
+  }
+
+  // Then get the profile details for each following user
+  const followingIds = followsData.map((f) => f.following_id)
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', followingIds)
+
+  if (profilesError) {
+    console.error('Error fetching following user profiles:', profilesError)
+    throw profilesError
+  }
+
+  // Return profiles in the same order as follows (most recent first)
+  const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]))
+  return followingIds
+    .map((id) => profilesMap.get(id))
+    .filter((profile): profile is UserProfile => profile !== undefined)
 }
 
