@@ -111,7 +111,7 @@ export default function LoginPage() {
           )}
 
           <p className="text-xs text-center text-slate-500 dark:text-slate-400">
-            By signing in, you agree to Rankify's terms of service
+            By signing in, you agree to Rankify&apos;s terms of service
           </p>
         </div>
       </div>
