@@ -25,6 +25,13 @@ interface RankedList {
   created_at: string
 }
 
+interface OwnerProfile {
+  id: string
+  username: string | null
+  display_name: string | null
+  email: string | null
+}
+
 export default function RankingDetailPage() {
   const router = useRouter()
   const params = useParams()
@@ -45,6 +52,7 @@ export default function RankingDetailPage() {
   const [wasPrivateBeforeShare, setWasPrivateBeforeShare] = useState(false)
   const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+  const [owner, setOwner] = useState<OwnerProfile | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -73,6 +81,7 @@ export default function RankingDetailPage() {
         setRanking(data.list)
         setEditableSongs([...data.list.songs]) // Initialize editable copy
         setEditableName(data.list.name) // Initialize editable name
+        setOwner(data.owner || null) // Set owner profile if available
       } catch (err: any) {
         setError(err.message || 'Failed to load ranking')
       } finally {
@@ -166,6 +175,7 @@ export default function RankingDetailPage() {
       setRanking(data.list)
       setEditableSongs([...data.list.songs])
       setEditableName(data.list.name)
+      setOwner(data.owner || null) // Update owner profile if available
       setIsEditing(false)
       setDraggedIndex(null)
     } catch (err: any) {
@@ -562,6 +572,21 @@ export default function RankingDetailPage() {
                             Use as Template
                           </button>
                         )}
+                        {/* Compare - Only available when viewing someone else's ranking */}
+                        {ranking && currentUserId && currentUserId !== ranking.user_id && (
+                          <button
+                            onClick={() => {
+                              router.push(`/rankings/${rankingId}/compare`)
+                              setShowMoreMenu(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors"
+                          >
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            Compare
+                          </button>
+                        )}
                       </div>
                     </>
                   )}
@@ -618,7 +643,24 @@ export default function RankingDetailPage() {
               {ranking.name || 'My Ranking'}
             </h1>
           )}
-          <p className="text-sm text-slate-600 dark:text-slate-400">{formattedDate}</p>
+          <div className="flex items-center gap-3 flex-wrap">
+            <p className="text-sm text-slate-600 dark:text-slate-400">{formattedDate}</p>
+            {/* Show owner username if viewing someone else's ranking */}
+            {owner && currentUserId && currentUserId !== ranking.user_id && (
+              <>
+                <span className="text-slate-400 dark:text-slate-500">•</span>
+                <Link
+                  href={`/users/${owner.id}`}
+                  className="text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:text-[#5a6d4a] dark:hover:text-[#7b8d6a] transition-colors flex items-center gap-1.5"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  {owner.display_name || owner.username || owner.email || 'User'}
+                </Link>
+              </>
+            )}
+          </div>
         </div>
 
         <div className="mb-6">

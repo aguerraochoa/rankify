@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getRankedList, deleteRankedList, updateRankedList } from '@/lib/db/rankedLists'
+import { getUserProfile } from '@/lib/db/users'
 
 // Mark this route as dynamic since it uses cookies for authentication
 export const dynamic = 'force-dynamic'
@@ -25,7 +26,26 @@ export async function GET(
       return NextResponse.json({ error: 'Ranking not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ list })
+    // Get user profile information for the ranking owner
+    let ownerProfile = null
+    if (list.user_id) {
+      try {
+        ownerProfile = await getUserProfile(list.user_id)
+      } catch (err) {
+        console.error('Error fetching owner profile:', err)
+        // Continue without profile info if it fails
+      }
+    }
+
+    return NextResponse.json({ 
+      list,
+      owner: ownerProfile ? {
+        id: ownerProfile.id,
+        username: ownerProfile.username,
+        display_name: ownerProfile.display_name,
+        email: ownerProfile.email,
+      } : null
+    })
   } catch (error) {
     console.error('Error fetching ranked list:', error)
     return NextResponse.json(
@@ -60,7 +80,27 @@ export async function PUT(
     }
 
     const list = await updateRankedList(user.id, params.id, songs, name)
-    return NextResponse.json({ list })
+    
+    // Get user profile information for the ranking owner
+    let ownerProfile = null
+    if (list.user_id) {
+      try {
+        ownerProfile = await getUserProfile(list.user_id)
+      } catch (err) {
+        console.error('Error fetching owner profile:', err)
+        // Continue without profile info if it fails
+      }
+    }
+
+    return NextResponse.json({ 
+      list,
+      owner: ownerProfile ? {
+        id: ownerProfile.id,
+        username: ownerProfile.username,
+        display_name: ownerProfile.display_name,
+        email: ownerProfile.email,
+      } : null
+    })
   } catch (error) {
     console.error('Error updating ranked list:', error)
     return NextResponse.json(
