@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { BinaryInsertionRanker, type RankingState, type ComparisonResult } from '@/lib/ranking/binaryInsertion'
 import { createClient } from '@/lib/supabase/client'
 
-export default function SongsPage() {
+function SongsPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [step, setStep] = useState<'select' | 'review' | 'ranking'>('select')
@@ -1377,4 +1377,20 @@ function SongRanking({
   )
 }
 
+export default function SongsPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-16">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Loading...</p>
+          </div>
+        </div>
+      </main>
+    }>
+      <SongsPageContent />
+    </Suspense>
+  )
+}
 

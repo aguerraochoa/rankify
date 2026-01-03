@@ -4,6 +4,9 @@ import { getUserProfile } from '@/lib/db/users'
 import { getFollowCounts, isFollowing } from '@/lib/db/follows'
 import { getPublicRankedLists } from '@/lib/db/rankedLists'
 
+// Mark this route as dynamic since it uses cookies for authentication
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
