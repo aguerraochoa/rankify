@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { BinaryInsertionRanker, type RankingState, type ComparisonResult } from '@/lib/ranking/binaryInsertion'
+import { BinaryInsertionRanker, type RankingState, type ComparisonResult, type Song } from '@/lib/ranking/binaryInsertion'
 import { createClient } from '@/lib/supabase/client'
 
 function SongsPageContent() {
@@ -15,11 +15,17 @@ function SongsPageContent() {
   const [selectedSongs, setSelectedSongs] = useState<any[]>([])
   const [templateSongs, setTemplateSongs] = useState<any[]>([]) // Pre-selected songs from template
   const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [existingRankingId, setExistingRankingId] = useState<string | null>(null)
+  const [existingRankedSongs, setExistingRankedSongs] = useState<any[]>([]) // Songs already ranked in order
 
-  // Load template if template query param exists
+  // Load template or extend existing ranking
   useEffect(() => {
     const templateId = searchParams.get('template')
-    if (templateId) {
+    const extendId = searchParams.get('extend')
+    
+    if (extendId) {
+      loadExistingRanking(extendId)
+    } else if (templateId) {
       loadTemplate(templateId)
     }
   }, [searchParams])
@@ -94,6 +100,83 @@ function SongsPageContent() {
     }
   }
 
+  const loadExistingRanking = async (rankingId: string) => {
+    setLoadingTemplate(true)
+    try {
+      const response = await fetch(`/api/ranked-lists/${rankingId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load ranking')
+      }
+
+      const data = await response.json()
+      const ranking = data.list
+
+      // Store the ranking ID for later use when saving
+      setExistingRankingId(rankingId)
+
+      // Group songs by album to reconstruct albums
+      const albumsMap = new Map<string, {
+        id: string | null
+        title: string | null
+        artist: string
+        coverArtUrl: string | null
+      }>()
+
+      // Process songs and group by album, preserving rank order
+      const processedSongs: any[] = []
+      const rankedSongs: any[] = []
+      
+      ranking.songs.forEach((song: any, index: number) => {
+        // Create album key
+        const albumKey = song.album_title
+          ? `${song.album_title}|${song.artist}`
+          : song.artist
+
+        const albumMapKey = song.album_musicbrainz_id || albumKey
+        if (!albumsMap.has(albumMapKey)) {
+          albumsMap.set(albumMapKey, {
+            id: song.album_musicbrainz_id || null,
+            title: song.album_title || null,
+            artist: song.artist,
+            coverArtUrl: song.cover_art_url || null,
+          })
+        }
+
+        const songData = {
+          id: song.musicbrainz_id,
+          title: song.title,
+          artist: song.artist,
+          albumId: song.album_musicbrainz_id || null,
+          albumTitle: song.album_title || null,
+          albumArtist: song.artist,
+          albumCoverArt: song.cover_art_url || null,
+          rank: song.rank || (index + 1), // Preserve rank
+        }
+
+        processedSongs.push(songData)
+        rankedSongs.push(songData) // Store in ranked order
+      })
+
+      // Convert albums map to array
+      const albums = Array.from(albumsMap.values())
+
+      // Set albums and pre-selected songs
+      setSelectedAlbums(albums)
+      setTemplateSongs(processedSongs)
+      setExistingRankedSongs(rankedSongs) // Store ranked songs for ranking step
+      
+      // Go directly to review step
+      setStep('review')
+    } catch (error) {
+      console.error('Error loading existing ranking:', error)
+      alert('Failed to load ranking. Please try again.')
+      // Fall back to normal flow
+      setStep('select')
+    } finally {
+      setLoadingTemplate(false)
+    }
+  }
+
   if (loadingTemplate) {
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
@@ -111,7 +194,7 @@ function SongsPageContent() {
     <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
       <div className="max-w-6xl mx-auto">
         {/* Buttons row - top */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center justify-between gap-4 mb-4">
           <Link
             href="/"
             className="group flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#8a9a7a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#d8e8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#6b7d5a]/30 dark:border-[#6b7d5a]/50"
@@ -121,6 +204,18 @@ function SongsPageContent() {
             </svg>
             Back
           </Link>
+          {step === 'review' && (
+            <button
+              onClick={() => setStep('select')}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+              title="Add more albums"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              <span className="hidden sm:inline">Add Albums</span>
+            </button>
+          )}
         </div>
         
         {/* Title row - below buttons */}
@@ -150,6 +245,8 @@ function SongsPageContent() {
             }}
             onBack={() => setStep('select')}
             preSelectedSongs={templateSongs}
+            existingRankedSongs={existingRankedSongs}
+            isExtending={!!existingRankingId}
           />
         )}
 
@@ -157,6 +254,8 @@ function SongsPageContent() {
           <SongRanking
             songs={selectedSongs}
             onBack={() => setStep('review')}
+            existingRankedSongs={existingRankedSongs}
+            existingRankingId={existingRankingId}
           />
         )}
       </div>
@@ -177,6 +276,11 @@ function AlbumSelection({
   const [loading, setLoading] = useState(false)
   const [localSelected, setLocalSelected] = useState<any[]>(selectedAlbums)
   const [searchMode, setSearchMode] = useState<'album' | 'artist'>('album')
+
+  // Sync localSelected with selectedAlbums prop when it changes (e.g., when going back from review)
+  useEffect(() => {
+    setLocalSelected(selectedAlbums)
+  }, [selectedAlbums])
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -344,7 +448,8 @@ function AlbumSelection({
                           const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '1'
                         }}
-                        onLoadingComplete={(img) => {
+                        onLoad={(e) => {
+                          const img = e.currentTarget
                           img.style.opacity = '1'
                           const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '0'
@@ -431,7 +536,8 @@ function AlbumSelection({
                                   const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
                                   if (placeholder) placeholder.style.opacity = '1'
                                 }}
-                                onLoadingComplete={(img) => {
+                                onLoad={(e) => {
+                                  const img = e.currentTarget
                                   img.style.opacity = '1'
                                   const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                                   if (placeholder) placeholder.style.opacity = '0'
@@ -516,7 +622,8 @@ function AlbumSelection({
                             placeholder.style.opacity = '1'
                           }
                         }}
-                        onLoadingComplete={(img) => {
+                        onLoad={(e) => {
+                          const img = e.currentTarget
                           img.style.opacity = '1'
                           const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) {
@@ -551,19 +658,29 @@ function SongReview({
   onSongsSelected,
   onBack,
   preSelectedSongs,
+  existingRankedSongs = [],
+  isExtending = false,
 }: {
   albums: any[]
   onSongsSelected: (songs: any[]) => void
   onBack: () => void
   preSelectedSongs?: any[]
+  existingRankedSongs?: any[]
+  isExtending?: boolean
 }) {
   const [songsByAlbum, setSongsByAlbum] = useState<Record<string, any[]>>({})
   const [selectedSongs, setSelectedSongs] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Helper function to create a consistent album key
+  const getAlbumKey = (album: any): string => {
+    // Use musicbrainz_id if available, otherwise use title|artist as fallback
+    return album.id || `${album.title || ''}|${album.artist || ''}`
+  }
+
   // Create a stable key based on album IDs to prevent unnecessary re-fetches
-  const albumsKey = albums.map(a => a.id).sort().join(',')
+  const albumsKey = albums.map(a => getAlbumKey(a)).sort().join(',')
   const previousAlbumsKeyRef = useRef<string>('')
   const previousPreSelectedSongsRef = useRef<any[] | undefined>(undefined)
   
@@ -592,14 +709,15 @@ function SongReview({
               await new Promise(resolve => setTimeout(resolve, 1200)) // 1.2 seconds between requests
             }
             
+            const albumKey = getAlbumKey(album)
             const params = new URLSearchParams({
-              releaseGroupId: album.id,
-              albumTitle: album.title,
-              artist: album.artist,
+              releaseGroupId: album.id || '',
+              albumTitle: album.title || '',
+              artist: album.artist || '',
             })
             const response = await fetch(`/api/music/album-songs?${params}`)
             const data = await response.json()
-            songsMap[album.id] = (data.songs || []).map((song: any) => ({
+            songsMap[albumKey] = (data.songs || []).map((song: any) => ({
               ...song,
               albumId: album.id,
               albumTitle: album.title,
@@ -607,8 +725,9 @@ function SongReview({
               albumCoverArt: album.coverArtUrl,
             }))
           } catch (err) {
-            console.error(`Error fetching songs for album ${album.id}:`, err)
-            songsMap[album.id] = []
+            const albumKey = getAlbumKey(album)
+            console.error(`Error fetching songs for album ${albumKey}:`, err)
+            songsMap[albumKey] = []
             // Wait a bit longer after an error before continuing
             await new Promise(resolve => setTimeout(resolve, 2000))
           }
@@ -674,10 +793,24 @@ function SongReview({
     if (albums.length > 0 && albumsChanged) {
       fetchSongs()
     }
-  }, [albumsKey, preSelectedSongs])
+  }, [albumsKey, preSelectedSongs, albums])
 
   const toggleSong = (songId: string, albumId: string) => {
     const uniqueKey = `${albumId}:${songId}`
+    
+    // If extending, check if this song is already ranked
+    if (isExtending && existingRankedSongs.length > 0) {
+      // albumId is already the album key
+      const song = (songsByAlbum[albumId] || []).find(s => s.id === songId)
+      if (song) {
+        const rankedInfo = isSongRanked(song, albumId)
+        // Prevent deselection of already-ranked songs
+        if (rankedInfo.ranked && selectedSongs.has(uniqueKey)) {
+          return // Don't allow deselection
+        }
+      }
+    }
+    
     const newSelected = new Set(selectedSongs)
     if (newSelected.has(uniqueKey)) {
       newSelected.delete(uniqueKey)
@@ -688,14 +821,33 @@ function SongReview({
   }
 
   const toggleAlbumSongs = (albumId: string) => {
+    // albumId is already the album key
     const albumSongs = songsByAlbum[albumId] || []
     const albumSongKeys = albumSongs.map((s) => `${albumId}:${s.id}`)
     const allSelected = albumSongKeys.length > 0 && albumSongKeys.every((key) => selectedSongs.has(key))
 
     const newSelected = new Set(selectedSongs)
     if (allSelected) {
-      // Deselect all songs from this album
-      albumSongKeys.forEach((key) => newSelected.delete(key))
+      // Deselect all songs from this album, but preserve already-ranked songs if extending
+      if (isExtending && existingRankedSongs.length > 0) {
+        albumSongKeys.forEach((key) => {
+          // Check if this song is already ranked
+          const [albumIdFromKey, songIdFromKey] = key.split(':')
+          const song = albumSongs.find(s => s.id === songIdFromKey)
+          if (song) {
+            const rankedInfo = isSongRanked(song, albumIdFromKey)
+            // Only deselect if not already ranked
+            if (!rankedInfo.ranked) {
+              newSelected.delete(key)
+            }
+          } else {
+            newSelected.delete(key)
+          }
+        })
+      } else {
+        // Normal flow - deselect all
+        albumSongKeys.forEach((key) => newSelected.delete(key))
+      }
     } else {
       // Select all songs from this album
       albumSongKeys.forEach((key) => newSelected.add(key))
@@ -703,11 +855,32 @@ function SongReview({
     setSelectedSongs(newSelected)
   }
 
+  // Helper function to check if a song is already ranked
+  const isSongRanked = (song: any, albumId: string): { ranked: boolean; rank?: number } => {
+    if (!isExtending || existingRankedSongs.length === 0) {
+      return { ranked: false }
+    }
+    
+    const normalizeString = (str: string) => str.toLowerCase().trim()
+    const rankedSong = existingRankedSongs.find((ranked) => {
+      const titleMatch = normalizeString(song.title) === normalizeString(ranked.title)
+      const artistMatch = normalizeString(song.artist) === normalizeString(ranked.artist)
+      const albumMatch = !ranked.albumTitle || !song.albumTitle || 
+        normalizeString(song.albumTitle || '') === normalizeString(ranked.albumTitle || '')
+      return titleMatch && artistMatch && albumMatch
+    })
+    
+    if (rankedSong) {
+      return { ranked: true, rank: rankedSong.rank }
+    }
+    return { ranked: false }
+  }
+
   const handleContinue = () => {
     const allSongs: any[] = []
-    Object.entries(songsByAlbum).forEach(([albumId, songs]) => {
+    Object.entries(songsByAlbum).forEach(([albumKey, songs]) => {
       songs.forEach((song) => {
-        const uniqueKey = `${albumId}:${song.id}`
+        const uniqueKey = `${albumKey}:${song.id}`
         if (selectedSongs.has(uniqueKey)) {
           allSongs.push(song)
         }
@@ -757,11 +930,20 @@ function SongReview({
     <div className="space-y-8">
       <div className="text-center">
         <h2 className="text-3xl font-bold mb-3 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-          Review Songs
+          {isExtending ? 'Extend Ranking' : 'Review Songs'}
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-lg mb-4">
-          Select which songs to include in your ranking
+          {isExtending 
+            ? 'Select songs to add from your ranking. Songs with rank badges are already ranked.'
+            : 'Select which songs to include in your ranking'}
         </p>
+        {isExtending && existingRankedSongs.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-800 rounded-xl">
+            <p className="text-sm text-blue-800 dark:text-blue-300">
+              <span className="font-semibold">{existingRankedSongs.length}</span> songs are already ranked.
+            </p>
+          </div>
+        )}
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 rounded-full">
           <span className="text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a]">
             {selectedSongs.size} / {totalSongs} selected
@@ -771,15 +953,16 @@ function SongReview({
 
       <div className="space-y-6">
         {albums.map((album) => {
-          const albumSongs = songsByAlbum[album.id] || []
+          const albumKey = getAlbumKey(album)
+          const albumSongs = songsByAlbum[albumKey] || []
           const selectedCount = albumSongs.filter((s) =>
-            selectedSongs.has(`${album.id}:${s.id}`)
+            selectedSongs.has(`${albumKey}:${s.id}`)
           ).length
           const allSelected = albumSongs.length > 0 && selectedCount === albumSongs.length
 
           return (
             <div
-              key={album.id}
+              key={albumKey}
               className="bg-white dark:bg-slate-800 rounded-2xl p-6 border-2 border-slate-200 dark:border-slate-700 shadow-lg hover:shadow-xl transition-all"
             >
               <div className="flex items-start justify-between mb-4">
@@ -803,7 +986,8 @@ function SongReview({
                           const placeholder = target.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '1'
                         }}
-                        onLoadingComplete={(img) => {
+                        onLoad={(e) => {
+                          const img = e.currentTarget
                           img.style.opacity = '1'
                           const placeholder = img.parentElement?.querySelector('.album-placeholder') as HTMLElement
                           if (placeholder) placeholder.style.opacity = '0'
@@ -823,7 +1007,7 @@ function SongReview({
                   </div>
                 </div>
                 <button
-                  onClick={() => toggleAlbumSongs(album.id)}
+                  onClick={() => toggleAlbumSongs(albumKey)}
                   className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-base font-semibold transition-all shadow-md hover:shadow-lg transform hover:scale-105 whitespace-nowrap ${
                     allSelected
                       ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
@@ -844,14 +1028,17 @@ function SongReview({
                   </div>
                 ) : (
                   albumSongs.map((song) => {
-                    const uniqueKey = `${album.id}:${song.id}`
+                    const uniqueKey = `${albumKey}:${song.id}`
                     const isSelected = selectedSongs.has(uniqueKey)
+                    const rankedInfo = isSongRanked(song, albumKey)
                     return (
                       <label
                         key={uniqueKey}
                         className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-[#f0f8e8] dark:bg-[#2a3d1a]/20 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
+                            ? rankedInfo.ranked
+                              ? 'bg-gradient-to-r from-[#f0f8e8] to-[#e8f5d8] dark:from-[#2a3d1a]/30 dark:to-[#3a4d2a]/30 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
+                              : 'bg-[#f0f8e8] dark:bg-[#2a3d1a]/20 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
                             : 'bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
                         }`}
                       >
@@ -859,14 +1046,26 @@ function SongReview({
                           <input
                             type="checkbox"
                             checked={isSelected}
-                            onChange={() => toggleSong(song.id, album.id)}
-                            className="w-5 h-5 text-[#4a5d3a] rounded focus:ring-2 focus:ring-[#4a5d3a] cursor-pointer"
+                            onChange={() => toggleSong(song.id, albumKey)}
+                            disabled={rankedInfo.ranked && isExtending}
+                            className={`w-5 h-5 text-[#4a5d3a] rounded focus:ring-2 focus:ring-[#4a5d3a] ${
+                              rankedInfo.ranked && isExtending 
+                                ? 'cursor-not-allowed opacity-60' 
+                                : 'cursor-pointer'
+                            }`}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`font-semibold truncate ${isSelected ? 'text-[#2a3d1a] dark:text-[#f0f8e8]' : 'text-slate-900 dark:text-slate-100'}`}>
-                            {song.title}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className={`font-semibold truncate ${isSelected ? 'text-[#2a3d1a] dark:text-[#f0f8e8]' : 'text-slate-900 dark:text-slate-100'}`}>
+                              {song.title}
+                            </p>
+                            {rankedInfo.ranked && (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] text-white dark:from-[#6b7d5a] dark:to-[#8a9a7a] flex-shrink-0">
+                                #{rankedInfo.rank}
+                              </span>
+                            )}
+                          </div>
                           {song.albumTitle && song.albumTitle !== album.title && (
                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                               from {song.albumTitle}
@@ -911,9 +1110,13 @@ function SongReview({
 function SongRanking({
   songs,
   onBack,
+  existingRankedSongs = [],
+  existingRankingId = null,
 }: {
   songs: any[]
   onBack: () => void
+  existingRankedSongs?: any[]
+  existingRankingId?: string | null
 }) {
   const router = useRouter()
   const supabase = createClient()
@@ -924,7 +1127,28 @@ function SongRanking({
   const [showNameInput, setShowNameInput] = useState(false)
 
   useEffect(() => {
-    if (songs.length === 0) {
+    // Convert existing ranked songs to Song format
+    const existingSongs: Song[] = existingRankedSongs.map(s => ({
+      id: s.id || s.musicbrainz_id,
+      title: s.title,
+      artist: s.artist,
+      coverArtUrl: s.cover_art_url || s.albumCoverArt,
+      albumTitle: s.album_title || s.albumTitle,
+      musicbrainzId: s.musicbrainz_id || s.id,
+      albumId: s.album_musicbrainz_id || s.albumId, // Preserve album ID
+    } as Song & { albumId?: string }))
+
+    // Convert new songs to Song format
+    const newSongs: Song[] = songs.map(s => ({
+      id: s.id || s.musicbrainz_id,
+      title: s.title,
+      artist: s.artist,
+      coverArtUrl: s.cover_art_url || s.coverArtUrl || s.albumCoverArt,
+      albumTitle: s.album_title || s.albumTitle,
+      musicbrainzId: s.musicbrainz_id || s.id,
+    }))
+
+    if (newSongs.length === 0 && existingSongs.length === 0) {
       setState({
         ranked: [],
         remaining: [],
@@ -936,13 +1160,17 @@ function SongRanking({
       return
     }
 
-    const newRanker = new BinaryInsertionRanker(songs, (newState) => {
-      setState(newState)
-    })
+    const newRanker = new BinaryInsertionRanker(
+      newSongs, 
+      (newState) => {
+        setState(newState)
+      },
+      existingSongs.length > 0 ? existingSongs : undefined
+    )
     setRanker(newRanker)
     const initialState = newRanker.initialize()
     setState(initialState)
-  }, [songs])
+  }, [songs, existingRankedSongs])
 
   const handleComparison = async (result: ComparisonResult) => {
     if (!ranker || !state) return
@@ -977,22 +1205,74 @@ function SongRanking({
         throw new Error('User not authenticated')
       }
 
-      const response = await fetch('/api/ranked-lists', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          songs: state.ranked,
-          name: listName || undefined,
-        }),
-      })
+      // If extending existing ranking, update it; otherwise create new
+      if (existingRankingId) {
+        // Convert Song[] to RankedListSong[] format
+        // Try to preserve album_musicbrainz_id from existing ranked songs
+        const rankedSongs = state.ranked.map((song, index) => {
+          // Try to find matching existing song to preserve album_musicbrainz_id
+          const existingSong = existingRankedSongs.find((es: any) => {
+            const normalizeString = (str: string) => str.toLowerCase().trim()
+            return normalizeString(es.title) === normalizeString(song.title) &&
+                   normalizeString(es.artist) === normalizeString(song.artist)
+          })
+          
+          return {
+            musicbrainz_id: song.musicbrainzId || song.id,
+            title: song.title,
+            artist: song.artist,
+            cover_art_url: song.coverArtUrl || null,
+            album_title: song.albumTitle || null,
+            album_musicbrainz_id: existingSong?.album_musicbrainz_id || (song as any).albumId || (song as any).album_musicbrainz_id || null,
+            rank: index + 1,
+          }
+        })
 
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Failed to save ranking')
+        const response = await fetch(`/api/ranked-lists/${existingRankingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            songs: rankedSongs,
+            name: listName || undefined,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to update ranking')
+        }
+
+        // Success - redirect to the updated ranking
+        router.push(`/rankings/${existingRankingId}`)
+      } else {
+        // Convert Song[] to RankedListSong[] format
+        const rankedSongs = state.ranked.map((song, index) => ({
+          musicbrainz_id: song.musicbrainzId || song.id,
+          title: song.title,
+          artist: song.artist,
+          cover_art_url: song.coverArtUrl || null,
+          album_title: song.albumTitle || null,
+          album_musicbrainz_id: null,
+          rank: index + 1,
+        }))
+
+        const response = await fetch('/api/ranked-lists', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            songs: rankedSongs,
+            name: listName || undefined,
+          }),
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Failed to save ranking')
+        }
+
+        // Success - redirect to rankings page
+        router.push('/rankings')
       }
-
-      // Success - redirect to rankings page
-      router.push('/rankings')
     } catch (error: any) {
       console.error('Error saving ranking:', error)
       alert(`Failed to save ranking: ${error.message || 'Please try again.'}`)
@@ -1010,7 +1290,10 @@ function SongRanking({
     )
   }
 
-  if (songs.length < 2) {
+  // Check if we have any songs to rank (new songs + existing)
+  const hasSongsToRank = songs.length > 0 || (existingRankedSongs && existingRankedSongs.length > 0)
+
+  if (!hasSongsToRank || (songs.length === 0 && existingRankedSongs.length < 2)) {
     return (
       <div className="text-center py-16">
         <div className="max-w-md mx-auto p-8 bg-white dark:bg-slate-800 rounded-2xl shadow-lg border-2 border-slate-200 dark:border-slate-700">
@@ -1041,10 +1324,12 @@ function SongRanking({
             </svg>
           </div>
           <h2 className="text-4xl font-bold mb-3 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
-            Ranking Complete!
+            {existingRankingId ? 'Ranking Updated!' : 'Ranking Complete!'}
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
-            You&apos;ve ranked <span className="font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{state.ranked.length}</span> songs in <span className="font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{state.totalComparisons}</span> comparisons
+            {existingRankingId 
+              ? `Your ranking now has ${state.ranked.length} songs${state.totalComparisons > 0 ? ` (${state.totalComparisons} new comparisons)` : ''}`
+              : `You've ranked ${state.ranked.length} songs in ${state.totalComparisons} comparisons`}
           </p>
         </div>
 
@@ -1113,7 +1398,7 @@ function SongRanking({
                 onClick={() => setShowNameInput(true)}
                 className="flex-1 px-6 py-3.5 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all"
               >
-                Save Ranking
+                {existingRankingId ? 'Update Ranking' : 'Save Ranking'}
               </button>
             </>
           ) : (
@@ -1135,10 +1420,10 @@ function SongRanking({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Saving...
+                    {existingRankingId ? 'Updating...' : 'Saving...'}
                   </span>
                 ) : (
-                  'Save'
+                  existingRankingId ? 'Update Ranking' : 'Save Ranking'
                 )}
               </button>
             </>
@@ -1244,7 +1529,8 @@ function SongRanking({
                             const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoadingComplete={(img) => {
+                          onLoad={(e) => {
+                            const img = e.currentTarget
                             img.style.opacity = '1'
                             const placeholder = img.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '0'
@@ -1297,7 +1583,8 @@ function SongRanking({
                             const placeholder = target.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoadingComplete={(img) => {
+                          onLoad={(e) => {
+                            const img = e.currentTarget
                             img.style.opacity = '1'
                             const placeholder = img.parentElement?.querySelector('div:first-child') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '0'

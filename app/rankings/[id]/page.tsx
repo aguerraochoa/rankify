@@ -225,6 +225,21 @@ export default function RankingDetailPage() {
     setDraggedIndex(null)
   }
 
+  const handleDeleteSong = (index: number) => {
+    if (editableSongs.length <= 1) {
+      alert('You must have at least one song in your ranking.')
+      return
+    }
+    
+    if (!confirm(`Remove "${editableSongs[index].title}" from this ranking?`)) {
+      return
+    }
+    
+    const newSongs = [...editableSongs]
+    newSongs.splice(index, 1)
+    setEditableSongs(newSongs)
+  }
+
   const handleDelete = async () => {
     if (!confirm('Are you sure you want to delete this ranking? This action cannot be undone.')) {
       return
@@ -250,6 +265,12 @@ export default function RankingDetailPage() {
     if (!ranking) return
     // Navigate to songs page with template parameter
     router.push(`/songs?template=${rankingId}`)
+  }
+
+  const handleAddMoreSongs = () => {
+    if (!ranking) return
+    // Navigate to songs page with extend parameter
+    router.push(`/songs?extend=${rankingId}`)
   }
 
   const handleToggleVisibility = async () => {
@@ -558,6 +579,21 @@ export default function RankingDetailPage() {
                             <span>{isGeneratingImage ? 'Downloading...' : 'Download'}</span>
                           </button>
                         )}
+                        {/* Add More Songs - Only available to ranking owner */}
+                        {ranking && currentUserId && currentUserId === ranking.user_id && (
+                          <button
+                            onClick={() => {
+                              handleAddMoreSongs()
+                              setShowMoreMenu(false)
+                            }}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-left text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] hover:bg-[#e8f0e0] dark:hover:bg-[#2a3d1a]/30 transition-colors"
+                          >
+                            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Add More Songs
+                          </button>
+                        )}
                         {/* Use as Template - Available for all public rankings */}
                         {ranking && ranking.is_public && (
                           <button
@@ -678,7 +714,7 @@ export default function RankingDetailPage() {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Edit Mode: Drag songs to reorder, or use the up/down arrows
+              Edit Mode: Drag songs to reorder, use the up/down arrows, or click the trash icon to remove songs
             </p>
           </div>
         )}
@@ -756,7 +792,7 @@ export default function RankingDetailPage() {
                       const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                       if (placeholder) placeholder.style.opacity = '1'
                     }}
-                    onLoadingComplete={() => {
+                    onLoad={() => {
                       const container = document.querySelector(`[data-song-container="${song.musicbrainz_id || song.title}"]`)
                       if (container) {
                         const img = container.querySelector('img') as HTMLElement
@@ -778,6 +814,19 @@ export default function RankingDetailPage() {
                   </p>
                 )}
               </div>
+              {isEditing && (
+                <button
+                  onClick={() => handleDeleteSong(index)}
+                  disabled={editableSongs.length <= 1}
+                  className="flex-shrink-0 w-8 h-8 flex items-center justify-center bg-red-50 dark:bg-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 rounded-lg transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Delete song"
+                  title="Remove song from ranking"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
             </div>
           ))}
         </div>

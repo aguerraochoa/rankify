@@ -39,9 +39,27 @@ export class BinaryInsertionRanker {
 
   constructor(
     songs: Song[],
-    onStateChange?: (state: RankingState) => void
+    onStateChange?: (state: RankingState) => void,
+    existingRankedSongs?: Song[] // Songs already ranked in order
   ) {
-    this.remaining = [...songs]
+    if (existingRankedSongs && existingRankedSongs.length > 0) {
+      // Start with existing ranked songs
+      this.ranked = [...existingRankedSongs]
+      // Filter out songs that are already ranked from the new songs list
+      const normalizeString = (str: string) => str.toLowerCase().trim()
+      this.remaining = songs.filter(newSong => {
+        return !existingRankedSongs.some(rankedSong => {
+          const titleMatch = normalizeString(newSong.title) === normalizeString(rankedSong.title)
+          const artistMatch = normalizeString(newSong.artist) === normalizeString(rankedSong.artist)
+          const albumMatch = (!rankedSong.albumTitle && !newSong.albumTitle) || 
+            (rankedSong.albumTitle && newSong.albumTitle && 
+             normalizeString(rankedSong.albumTitle) === normalizeString(newSong.albumTitle))
+          return titleMatch && artistMatch && albumMatch
+        })
+      })
+    } else {
+      this.remaining = [...songs]
+    }
     this.onStateChange = onStateChange
   }
 
@@ -52,6 +70,11 @@ export class BinaryInsertionRanker {
   initialize(): RankingState | null {
     if (this.remaining.length === 0) {
       return this.getState()
+    }
+
+    // If we already have ranked songs, start inserting new songs immediately
+    if (this.ranked.length > 0) {
+      return this.startNextInsertion()
     }
 
     if (this.remaining.length === 1) {

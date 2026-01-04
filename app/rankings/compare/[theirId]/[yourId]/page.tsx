@@ -331,7 +331,7 @@ export default function ComparePage() {
                             const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoadingComplete={() => {
+                          onLoad={() => {
                             const container = document.querySelector(`[data-song-container="${song.musicbrainz_id || song.title}"]`)
                             if (container) {
                               const img = container.querySelector('img') as HTMLElement
@@ -384,7 +384,8 @@ export default function ComparePage() {
                                 const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '1'
                               }}
-                              onLoadingComplete={(img) => {
+                              onLoad={(e) => {
+                                const img = e.currentTarget
                                 img.style.opacity = '1'
                                 const placeholder = img.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '0'
@@ -450,7 +451,7 @@ export default function ComparePage() {
                             const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                             if (placeholder) placeholder.style.opacity = '1'
                           }}
-                          onLoadingComplete={() => {
+                          onLoad={() => {
                             const container = document.querySelector(`[data-song-container="${song.musicbrainz_id || song.title}"]`)
                             if (container) {
                               const img = container.querySelector('img') as HTMLElement
@@ -529,7 +530,8 @@ export default function ComparePage() {
                                 const placeholder = target.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '1'
                               }}
-                              onLoadingComplete={(img) => {
+                              onLoad={(e) => {
+                                const img = e.currentTarget
                                 img.style.opacity = '1'
                                 const placeholder = img.parentElement?.querySelector('.song-placeholder') as HTMLElement
                                 if (placeholder) placeholder.style.opacity = '0'
