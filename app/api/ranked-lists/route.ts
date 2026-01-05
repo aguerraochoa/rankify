@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { songs, name } = body
+    const { songs, name, status, rankingState } = body
 
     if (!songs || !Array.isArray(songs)) {
       return NextResponse.json(
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const list = await saveRankedList(user.id, songs, name)
+    const list = await saveRankedList(user.id, songs, name, status || 'completed', rankingState)
     return NextResponse.json({ list })
   } catch (error) {
     console.error('Error saving ranked list:', error)

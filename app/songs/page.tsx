@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, Suspense } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -17,16 +17,21 @@ function SongsPageContent() {
   const [loadingTemplate, setLoadingTemplate] = useState(false)
   const [existingRankingId, setExistingRankingId] = useState<string | null>(null)
   const [existingRankedSongs, setExistingRankedSongs] = useState<any[]>([]) // Songs already ranked in order
+  const [draftRankingState, setDraftRankingState] = useState<RankingState | null>(null) // Draft state to restore
 
-  // Load template or extend existing ranking
+
+  // Load template, extend existing ranking, or resume draft
   useEffect(() => {
     const templateId = searchParams.get('template')
     const extendId = searchParams.get('extend')
+    const resumeId = searchParams.get('resume')
     
     if (extendId) {
       loadExistingRanking(extendId)
     } else if (templateId) {
       loadTemplate(templateId)
+    } else if (resumeId) {
+      loadDraft(resumeId)
     }
   }, [searchParams])
 
@@ -177,13 +182,117 @@ function SongsPageContent() {
     }
   }
 
+  const loadDraft = async (draftId: string) => {
+    setLoadingTemplate(true)
+    try {
+      const response = await fetch(`/api/ranked-lists/draft?id=${draftId}`)
+      if (!response.ok) {
+        throw new Error('Failed to load draft')
+      }
+
+      const data = await response.json()
+      const draft = data.draft
+
+      if (!draft.ranking_state) {
+        throw new Error('Draft is missing ranking state')
+      }
+
+      const { state: rankingState, songs: draftSongs, existingRankedSongs: draftExistingRankedSongs } = draft.ranking_state
+
+      // Store the draft ID for later use when saving
+      setExistingRankingId(draftId)
+
+      // Reconstruct albums from songs
+      const albumsMap = new Map<string, {
+        id: string | null
+        title: string | null
+        artist: string
+        coverArtUrl: string | null
+      }>()
+
+      // Process all songs (both existing ranked and new)
+      const allSongs = [...(draftExistingRankedSongs || []), ...(draftSongs || [])]
+      allSongs.forEach((song: any) => {
+        const albumKey = song.album_title
+          ? `${song.album_title}|${song.artist}`
+          : song.artist
+        const albumMapKey = song.album_musicbrainz_id || song.albumId || albumKey
+        if (!albumsMap.has(albumMapKey)) {
+          albumsMap.set(albumMapKey, {
+            id: song.album_musicbrainz_id || song.albumId || null,
+            title: song.album_title || song.albumTitle || null,
+            artist: song.artist,
+            coverArtUrl: song.cover_art_url || song.coverArtUrl || song.albumCoverArt || null,
+          })
+        }
+      })
+
+      const albums = Array.from(albumsMap.values())
+
+      // Convert songs to the format expected by SongReview
+      // Use remaining songs from rankingState if available, otherwise use all draftSongs
+      const remainingSongIds = new Set(
+        (rankingState.remaining || []).map((s: Song) => s.id || s.musicbrainzId).filter(Boolean)
+      )
+      
+      // Filter draftSongs to only include songs that are still remaining (not yet ranked)
+      const songsToProcess = remainingSongIds.size > 0 
+        ? draftSongs.filter((song: any) => {
+            const songId = song.musicbrainz_id || song.id
+            return songId && remainingSongIds.has(songId)
+          })
+        : draftSongs
+
+      const processedSongs = songsToProcess.map((song: any) => ({
+        id: song.musicbrainz_id || song.id,
+        title: song.title,
+        artist: song.artist,
+        albumId: song.album_musicbrainz_id || song.albumId || null,
+        albumTitle: song.album_title || song.albumTitle || null,
+        albumArtist: song.artist,
+        albumCoverArt: song.cover_art_url || song.coverArtUrl || song.albumCoverArt || null,
+      }))
+
+      // Convert existing ranked songs
+      const existingRanked = (draftExistingRankedSongs || []).map((song: any) => ({
+        id: song.musicbrainz_id || song.id,
+        title: song.title,
+        artist: song.artist,
+        albumId: song.album_musicbrainz_id || song.albumId || null,
+        albumTitle: song.album_title || song.albumTitle || null,
+        albumArtist: song.artist,
+        albumCoverArt: song.cover_art_url || song.coverArtUrl || song.albumCoverArt || null,
+        rank: song.rank,
+      }))
+
+      // Set state
+      setSelectedAlbums(albums)
+      setTemplateSongs(processedSongs)
+      setExistingRankedSongs(existingRanked)
+      // Set selectedSongs to the remaining songs that need to be ranked
+      setSelectedSongs(processedSongs)
+      
+      // Store the ranking state to restore in SongRanking
+      setDraftRankingState(rankingState)
+      
+      // Go directly to ranking step to restore the draft
+      setStep('ranking')
+    } catch (error) {
+      console.error('Error loading draft:', error)
+      alert('Failed to load draft. Please try again.')
+      setStep('select')
+    } finally {
+      setLoadingTemplate(false)
+    }
+  }
+
   if (loadingTemplate) {
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">Loading template...</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">Loading draft...</p>
           </div>
         </div>
       </main>
@@ -200,9 +309,9 @@ function SongsPageContent() {
             className="group flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#8a9a7a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#d8e8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#6b7d5a]/30 dark:border-[#6b7d5a]/50"
           >
             <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
             </svg>
-            Back
+            Home
           </Link>
           {step === 'review' && (
             <button
@@ -213,7 +322,19 @@ function SongsPageContent() {
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="hidden sm:inline">Add Albums</span>
+              <span>Add Albums</span>
+            </button>
+          )}
+          {step === 'ranking' && (
+            <button
+              onClick={() => setStep('review')}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
+              title="Edit song selection"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              </svg>
+              <span>Edit Selection</span>
             </button>
           )}
         </div>
@@ -243,7 +364,9 @@ function SongsPageContent() {
               setSelectedSongs(songs)
               setStep('ranking')
             }}
-            onBack={() => setStep('select')}
+            onBack={() => {
+              setStep('select')
+            }}
             preSelectedSongs={templateSongs}
             existingRankedSongs={existingRankedSongs}
             isExtending={!!existingRankingId}
@@ -253,9 +376,14 @@ function SongsPageContent() {
         {step === 'ranking' && (
           <SongRanking
             songs={selectedSongs}
-            onBack={() => setStep('review')}
+            albums={selectedAlbums}
+            onBack={() => {
+              setStep('review')
+            }}
             existingRankedSongs={existingRankedSongs}
             existingRankingId={existingRankingId}
+            draftRankingState={draftRankingState}
+            setExistingRankingId={setExistingRankingId}
           />
         )}
       </div>
@@ -1109,24 +1237,78 @@ function SongReview({
 // Song Ranking Component
 function SongRanking({
   songs,
+  albums = [],
   onBack,
   existingRankedSongs = [],
   existingRankingId = null,
+  draftRankingState = null,
+  setExistingRankingId,
 }: {
   songs: any[]
+  albums?: any[]
   onBack: () => void
   existingRankedSongs?: any[]
   existingRankingId?: string | null
+  draftRankingState?: RankingState | null
+  setExistingRankingId?: (id: string | null) => void
 }) {
   const router = useRouter()
   const supabase = createClient()
   const [ranker, setRanker] = useState<BinaryInsertionRanker | null>(null)
   const [state, setState] = useState<RankingState | null>(null)
   const [saving, setSaving] = useState(false)
+  const [savingDraft, setSavingDraft] = useState(false)
+  const [draftId, setDraftId] = useState<string | null>(null)
   const [listName, setListName] = useState('')
   const [showNameInput, setShowNameInput] = useState(false)
 
   useEffect(() => {
+    // If we have a draft state, restore it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (draftRankingState) {
+      // Set draft ID if we're resuming
+      if (existingRankingId) {
+        setDraftId(existingRankingId)
+      }
+
+      // Convert existing ranked songs to Song format for the ranker
+      const existingSongs: Song[] = existingRankedSongs.map(s => ({
+        id: s.id || s.musicbrainz_id,
+        title: s.title,
+        artist: s.artist,
+        coverArtUrl: s.cover_art_url || s.albumCoverArt,
+        albumTitle: s.album_title || s.albumTitle,
+        musicbrainzId: s.musicbrainz_id || s.id,
+        albumId: s.album_musicbrainz_id || s.albumId,
+      } as Song & { albumId?: string }))
+
+      // Convert new songs to Song format
+      const newSongs: Song[] = songs.map(s => ({
+        id: s.id || s.musicbrainz_id,
+        title: s.title,
+        artist: s.artist,
+        coverArtUrl: s.cover_art_url || s.coverArtUrl || s.albumCoverArt,
+        albumTitle: s.album_title || s.albumTitle,
+        musicbrainzId: s.musicbrainz_id || s.id,
+      }))
+
+      // Create ranker with remaining songs and existing ranked songs
+      const restoredRanker = new BinaryInsertionRanker(
+        draftRankingState.remaining, // Remaining songs become the "new" songs
+        (newState) => {
+          setState(newState)
+        },
+        draftRankingState.ranked // Ranked songs become "existing" ranked songs
+      )
+      
+      setRanker(restoredRanker)
+      
+      // Restore the saved state
+      setState(draftRankingState)
+      return
+    }
+
+    // Normal initialization (no saved progress or user chose to start fresh)
     // Convert existing ranked songs to Song format
     const existingSongs: Song[] = existingRankedSongs.map(s => ({
       id: s.id || s.musicbrainz_id,
@@ -1170,7 +1352,9 @@ function SongRanking({
     setRanker(newRanker)
     const initialState = newRanker.initialize()
     setState(initialState)
-  }, [songs, existingRankedSongs])
+    // existingRankingId intentionally excluded to prevent re-initialization when saving drafts
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [songs, existingRankedSongs, draftRankingState])
 
   const handleComparison = async (result: ComparisonResult) => {
     if (!ranker || !state) return
@@ -1186,9 +1370,53 @@ function SongRanking({
     }
 
     setState(newState)
+  }
 
-    // Auto-save progress (optional - can be removed if too frequent)
-    // await saveProgress(newState)
+  const handleSaveDraft = async () => {
+    if (!state) return
+
+    setSavingDraft(true)
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        alert('Please log in to save drafts')
+        return
+      }
+
+      const response = await fetch('/api/ranked-lists/draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rankingState: state,
+          songs: songs,
+          existingRankedSongs: existingRankedSongs,
+          name: listName || undefined,
+          draftId: draftId,
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save draft')
+      }
+
+      const { draft } = await response.json()
+      setDraftId(draft.id)
+      // Set existingRankingId so that when user finishes, it updates the draft instead of creating new
+      if (!existingRankingId && setExistingRankingId) {
+        setExistingRankingId(draft.id)
+      }
+      
+      alert('Draft saved! You can resume from "My Rankings" later.')
+    } catch (error: any) {
+      console.error('Error saving draft:', error)
+      alert(`Failed to save draft: ${error.message || 'Please try again.'}`)
+    } finally {
+      setSavingDraft(false)
+    }
   }
 
 
@@ -1228,12 +1456,16 @@ function SongRanking({
           }
         })
 
+        // Check if this is a draft being completed
+        const isCompletingDraft = draftId === existingRankingId
+
         const response = await fetch(`/api/ranked-lists/${existingRankingId}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             songs: rankedSongs,
             name: listName || undefined,
+            status: isCompletingDraft ? 'completed' : undefined, // Mark draft as completed
           }),
         })
 
@@ -1434,8 +1666,9 @@ function SongRanking({
   }
 
   // Show ranked list preview
-  const progress = state.ranked.length > 0
-    ? ((songs.length - state.remaining.length) / songs.length) * 100
+  const totalSongs = state.ranked.length + state.remaining.length
+  const progress = totalSongs > 0
+    ? (state.ranked.length / totalSongs) * 100
     : 0
 
   return (
@@ -1448,18 +1681,39 @@ function SongRanking({
               Rank Your Songs
             </h2>
             <p className="text-slate-600 dark:text-slate-400">
-              {state.ranked.length} of {songs.length} ranked
+              {state.ranked.length} of {state.ranked.length + state.remaining.length} ranked
             </p>
           </div>
-          <div className="text-right">
-            <div className="text-3xl font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">
-              {Math.round(progress)}%
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleSaveDraft}
+              disabled={savingDraft || state.isComplete}
+              className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md border border-blue-200 dark:border-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              title="Save draft to resume later"
+            >
+              {savingDraft ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                  </svg>
+                  <span className="hidden sm:inline">Save Draft</span>
+                  <span className="sm:hidden">Save</span>
+                </>
+              )}
+            </button>
+            <div className="text-right">
+              <div className="text-3xl font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">
+                {Math.round(progress)}%
+              </div>
             </div>
-            {state.estimatedRemaining > 0 && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                ~{state.estimatedRemaining} comparisons left
-              </p>
-            )}
           </div>
         </div>
         <div className="relative w-full bg-slate-200 dark:bg-slate-700 rounded-full h-4 overflow-hidden">
@@ -1672,17 +1926,6 @@ function SongRanking({
         </div>
       </div>
 
-      <div className="text-center pt-4">
-        <button
-          onClick={onBack}
-          className="inline-flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to Review
-        </button>
-      </div>
     </div>
   )
 }

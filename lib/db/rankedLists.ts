@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { Song } from '@/lib/ranking/binaryInsertion'
+import type { Song, RankingState } from '@/lib/ranking/binaryInsertion'
 
 export interface RankedListSong {
   song_id?: string // If song exists in DB
@@ -20,6 +20,8 @@ export interface RankedList {
   song_count: number
   is_public: boolean
   share_token: string | null
+  status?: 'draft' | 'completed'
+  ranking_state?: any // Full ranking state for drafts (RankingState + songs metadata)
   created_at: string
   updated_at: string
 }
@@ -30,7 +32,9 @@ export interface RankedList {
 export async function saveRankedList(
   userId: string,
   rankedSongs: Song[],
-  name?: string
+  name?: string,
+  status: 'draft' | 'completed' = 'completed',
+  rankingState?: any
 ): Promise<RankedList> {
   const supabase = await createClient()
 
@@ -52,6 +56,8 @@ export async function saveRankedList(
       songs: songsData,
       song_count: rankedSongs.length,
       is_public: true, // Rankings are public by default
+      status: status,
+      ranking_state: rankingState || null,
     })
     .select()
     .single()
@@ -65,7 +71,78 @@ export async function saveRankedList(
 }
 
 /**
- * Get all ranked lists for a user
+ * Save or update a draft ranking
+ */
+export async function saveDraftRanking(
+  userId: string,
+  draftId: string | null,
+  rankingState: any,
+  songs: any[],
+  existingRankedSongs: any[],
+  name?: string
+): Promise<RankedList> {
+  const supabase = await createClient()
+
+  // Convert current ranked songs to RankedListSong format
+  const rankedSongs = rankingState.ranked.map((song: Song, index: number) => ({
+    musicbrainz_id: song.musicbrainzId || song.id,
+    title: song.title,
+    artist: song.artist,
+    cover_art_url: song.coverArtUrl,
+    album_title: song.albumTitle,
+    album_musicbrainz_id: (song as any).albumId || null,
+    rank: index + 1,
+  }))
+
+  const draftData = {
+    user_id: userId,
+    name: name || null,
+    songs: rankedSongs,
+    song_count: rankingState.ranked.length + rankingState.remaining.length,
+    is_public: false, // Drafts are private
+    status: 'draft' as const,
+    ranking_state: {
+      state: rankingState,
+      songs: songs,
+      existingRankedSongs: existingRankedSongs,
+    },
+  }
+
+  if (draftId) {
+    // Update existing draft
+    const { data, error } = await supabase
+      .from('ranked_lists')
+      .update(draftData)
+      .eq('id', draftId)
+      .eq('user_id', userId)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error updating draft:', error)
+      throw error
+    }
+
+    return data
+  } else {
+    // Create new draft
+    const { data, error } = await supabase
+      .from('ranked_lists')
+      .insert(draftData)
+      .select()
+      .single()
+
+    if (error) {
+      console.error('Error saving draft:', error)
+      throw error
+    }
+
+    return data
+  }
+}
+
+/**
+ * Get all ranked lists for a user (only completed, not drafts)
  */
 export async function getUserRankedLists(userId: string): Promise<RankedList[]> {
   const supabase = await createClient()
@@ -74,6 +151,7 @@ export async function getUserRankedLists(userId: string): Promise<RankedList[]> 
     .from('ranked_lists')
     .select('*')
     .eq('user_id', userId)
+    .eq('status', 'completed')
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -82,6 +160,52 @@ export async function getUserRankedLists(userId: string): Promise<RankedList[]> 
   }
 
   return data || []
+}
+
+/**
+ * Get all draft rankings for a user
+ */
+export async function getUserDrafts(userId: string): Promise<RankedList[]> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('ranked_lists')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'draft')
+    .order('updated_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching drafts:', error)
+    throw error
+  }
+
+  return data || []
+}
+
+/**
+ * Get a draft ranking by ID
+ */
+export async function getDraftRanking(userId: string, draftId: string): Promise<RankedList | null> {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('ranked_lists')
+    .select('*')
+    .eq('id', draftId)
+    .eq('user_id', userId)
+    .eq('status', 'draft')
+    .single()
+
+  if (error) {
+    if (error.code === 'PGRST116') {
+      return null // Not found
+    }
+    console.error('Error fetching draft:', error)
+    throw error
+  }
+
+  return data
 }
 
 /**
@@ -121,7 +245,8 @@ export async function updateRankedList(
   userId: string,
   listId: string,
   songs: RankedListSong[],
-  name?: string | null
+  name?: string | null,
+  status?: 'draft' | 'completed'
 ): Promise<RankedList> {
   const supabase = await createClient()
 
@@ -139,6 +264,16 @@ export async function updateRankedList(
   // Only update name if provided
   if (name !== undefined) {
     updateData.name = name || null
+  }
+
+  // Update status if provided (e.g., mark draft as completed)
+  if (status !== undefined) {
+    updateData.status = status
+    // Clear ranking_state and make public when completing a draft
+    if (status === 'completed') {
+      updateData.ranking_state = null
+      updateData.is_public = true // Make it public by default when completing
+    }
   }
 
   const { data, error } = await supabase

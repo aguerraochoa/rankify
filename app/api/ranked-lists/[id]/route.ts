@@ -70,7 +70,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { songs, name } = body
+    const { songs, name, status } = body
 
     if (!songs || !Array.isArray(songs)) {
       return NextResponse.json(
@@ -79,7 +79,7 @@ export async function PUT(
       )
     }
 
-    const list = await updateRankedList(user.id, params.id, songs, name)
+    const list = await updateRankedList(user.id, params.id, songs, name, status)
     
     // Get user profile information for the ranking owner
     let ownerProfile = null
