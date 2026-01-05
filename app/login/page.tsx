@@ -61,15 +61,18 @@ export default function LoginPage() {
         data: { user },
       } = await supabase.auth.getUser()
       if (user) {
-        // If we just verified, wait a moment to show the message
+        // Get the redirect URL from query params
         const urlParams = new URLSearchParams(window.location.search)
+        const nextUrl = urlParams.get('next') || '/'
+        
+        // If we just verified, wait a moment to show the message
         if (urlParams.get('verified') === 'true') {
           setTimeout(() => {
-            router.push('/')
+            router.push(nextUrl)
             router.refresh()
           }, 1500)
         } else {
-          router.push('/')
+          router.push(nextUrl)
           router.refresh()
         }
       }
@@ -81,10 +84,16 @@ export default function LoginPage() {
     setLoading(true)
     setMessage('')
 
+    // Preserve the next parameter for OAuth redirect
+    const urlParams = new URLSearchParams(window.location.search)
+    const nextUrl = urlParams.get('next') || '/'
+    const callbackUrl = new URL('/auth/callback', window.location.origin)
+    callbackUrl.searchParams.set('next', nextUrl)
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: callbackUrl.toString(),
       },
     })
 
@@ -138,11 +147,17 @@ export default function LoginPage() {
       return
     }
 
+    // Preserve the next parameter for email verification redirect
+    const urlParams = new URLSearchParams(window.location.search)
+    const nextUrl = urlParams.get('next') || '/'
+    const callbackUrl = new URL('/auth/callback', window.location.origin)
+    callbackUrl.searchParams.set('next', nextUrl)
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: callbackUrl.toString(),
       },
     })
 
@@ -179,8 +194,10 @@ export default function LoginPage() {
         await supabase.auth.signOut()
         setLoading(false)
       } else {
-        // Success - redirect to home
-        router.push('/')
+        // Success - redirect to intended destination or home
+        const urlParams = new URLSearchParams(window.location.search)
+        const nextUrl = urlParams.get('next') || '/'
+        router.push(nextUrl)
         router.refresh()
       }
     }

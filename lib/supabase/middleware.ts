@@ -2,10 +2,12 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function updateSession(request: NextRequest) {
-  // Allow login and auth routes without checking auth
+  // Allow login, auth, and PUBLIC routes without checking auth
   if (
     request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/auth')
+    request.nextUrl.pathname.startsWith('/auth') ||
+    request.nextUrl.pathname.startsWith('/rankings/shared') || // Public: shared rankings
+    request.nextUrl.pathname.startsWith('/users/') // Public: user profiles
   ) {
     return NextResponse.next()
   }
@@ -60,10 +62,10 @@ export async function updateSession(request: NextRequest) {
     } = await supabase.auth.getUser()
 
     if (!user) {
-      // no user, redirect to login page
-      const url = request.nextUrl.clone()
-      url.pathname = '/login'
-      return NextResponse.redirect(url)
+      // no user, redirect to login page WITH the original URL preserved
+      const loginUrl = new URL('/login', request.url)
+      loginUrl.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search)
+      return NextResponse.redirect(loginUrl)
     }
 
     // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're
