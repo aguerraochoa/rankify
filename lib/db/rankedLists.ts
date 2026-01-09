@@ -391,7 +391,8 @@ export async function getPublicRankedLists(
 }
 
 /**
- * Generate or regenerate share token for a ranked list
+ * Generate or get existing share token for a ranked list
+ * Preserves existing tokens to keep share links valid
  */
 export async function generateShareToken(
   userId: string,
@@ -399,8 +400,30 @@ export async function generateShareToken(
 ): Promise<string> {
   const supabase = await createClient()
 
-  // Generate a unique token (using crypto.randomUUID or similar)
-  // For now, we'll use a simple approach with timestamp + random
+  // First, check if a share token already exists
+  const { data: existing } = await supabase
+    .from('ranked_lists')
+    .select('share_token')
+    .eq('user_id', userId)
+    .eq('id', listId)
+    .single()
+
+  // If a token already exists, return it (preserves existing share links)
+  if (existing?.share_token) {
+    // Still ensure it's public and update the timestamp
+    await supabase
+      .from('ranked_lists')
+      .update({
+        is_public: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('user_id', userId)
+      .eq('id', listId)
+    
+    return existing.share_token
+  }
+
+  // Generate a new token only if one doesn't exist
   const token = `share_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`
 
   const { data, error } = await supabase
