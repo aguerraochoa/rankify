@@ -15,6 +15,7 @@ function SongsPageContent() {
   const [selectedSongs, setSelectedSongs] = useState<any[]>([])
   const [templateSongs, setTemplateSongs] = useState<any[]>([]) // Pre-selected songs from template
   const [loadingTemplate, setLoadingTemplate] = useState(false)
+  const [loadingType, setLoadingType] = useState<'template' | 'draft' | 'extend' | null>(null)
   const [existingRankingId, setExistingRankingId] = useState<string | null>(null)
   const [existingRankedSongs, setExistingRankedSongs] = useState<any[]>([]) // Songs already ranked in order
   const [draftRankingState, setDraftRankingState] = useState<RankingState | null>(null) // Draft state to restore
@@ -27,10 +28,13 @@ function SongsPageContent() {
     const resumeId = searchParams.get('resume')
     
     if (extendId) {
+      setLoadingType('extend')
       loadExistingRanking(extendId)
     } else if (templateId) {
+      setLoadingType('template')
       loadTemplate(templateId)
     } else if (resumeId) {
+      setLoadingType('draft')
       loadDraft(resumeId)
     }
   }, [searchParams])
@@ -287,12 +291,18 @@ function SongsPageContent() {
   }
 
   if (loadingTemplate) {
+    const loadingMessage = loadingType === 'template' 
+      ? 'Loading template...' 
+      : loadingType === 'extend'
+      ? 'Loading ranking...'
+      : 'Loading draft...'
+    
     return (
       <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
-            <p className="text-slate-600 dark:text-slate-400 text-lg">Loading draft...</p>
+            <p className="text-slate-600 dark:text-slate-400 text-lg">{loadingMessage}</p>
           </div>
         </div>
       </main>
@@ -594,8 +604,44 @@ function AlbumSelection({
               </div>
             ))}
           </div>
+          
+          {/* Warning message if albums are missing IDs */}
+          {localSelected.some(album => !album.id) && (
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <p className="font-semibold text-yellow-800 dark:text-yellow-300 mb-1">
+                    Please wait for album covers to load
+                  </p>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-400">
+                    Some albums are still loading. Waiting ensures your ranking can be used as a template by others.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <button
-            onClick={() => onAlbumsSelected(localSelected)}
+            onClick={() => {
+              // Validate that all selected albums have IDs before proceeding
+              const albumsWithoutIds = localSelected.filter(album => !album.id)
+              
+              if (albumsWithoutIds.length > 0) {
+                alert(
+                  `Please wait for album covers to load before continuing. ` +
+                  `Some albums are missing required information:\n\n` +
+                  `${albumsWithoutIds.map(a => `• ${a.title} by ${a.artist}`).join('\n')}\n\n` +
+                  `This ensures your ranking can be used as a template by others.`
+                )
+                return
+              }
+              
+              // All albums have IDs, proceed normally
+              onAlbumsSelected(localSelected)
+            }}
             disabled={localSelected.length === 0}
             className="w-full py-4 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white font-bold rounded-2xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none text-lg"
           >
@@ -831,19 +877,41 @@ function SongReview({
         // MusicBrainz allows max 1 request per second
         for (let i = 0; i < albums.length; i++) {
           const album = albums[i]
+          const albumKey = getAlbumKey(album)
+          
+          // Skip albums that don't have an ID and don't have a title (can't look them up)
+          if (!album.id && !album.title) {
+            console.warn(`Skipping album ${albumKey} - missing both ID and title`)
+            songsMap[albumKey] = []
+            continue
+          }
+          
           try {
             // Add delay between requests (except for the first one)
             if (i > 0) {
               await new Promise(resolve => setTimeout(resolve, 1200)) // 1.2 seconds between requests
             }
             
-            const albumKey = getAlbumKey(album)
             const params = new URLSearchParams({
               releaseGroupId: album.id || '',
               albumTitle: album.title || '',
               artist: album.artist || '',
             })
+            
+            // Only make the request if we have either an ID or both title and artist
+            if (!album.id && (!album.title || !album.artist)) {
+              console.warn(`Skipping album ${albumKey} - insufficient data to fetch songs`)
+              songsMap[albumKey] = []
+              continue
+            }
+            
             const response = await fetch(`/api/music/album-songs?${params}`)
+            
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}))
+              throw new Error(errorData.error || `HTTP ${response.status}`)
+            }
+            
             const data = await response.json()
             songsMap[albumKey] = (data.songs || []).map((song: any) => ({
               ...song,
@@ -853,7 +921,6 @@ function SongReview({
               albumCoverArt: album.coverArtUrl,
             }))
           } catch (err) {
-            const albumKey = getAlbumKey(album)
             console.error(`Error fetching songs for album ${albumKey}:`, err)
             songsMap[albumKey] = []
             // Wait a bit longer after an error before continuing
@@ -1152,7 +1219,12 @@ function SongReview({
                     <svg className="w-12 h-12 text-slate-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">No songs found for this album</p>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mb-2">No songs found for this album</p>
+                    {!album.id && !album.title && (
+                      <p className="text-xs text-slate-400 dark:text-slate-500 mt-2">
+                        This album is missing required information. Please use the fix-albums endpoint to update it.
+                      </p>
+                    )}
                   </div>
                 ) : (
                   albumSongs.map((song) => {
@@ -1223,7 +1295,22 @@ function SongReview({
           Back
         </button>
         <button
-          onClick={handleContinue}
+          onClick={() => {
+            // Validate that all albums have IDs before proceeding
+            const albumsWithoutIds = albums.filter(album => !album.id)
+            
+            if (albumsWithoutIds.length > 0) {
+              alert(
+                `Some albums are missing required information. Please go back and wait for album covers to load.\n\n` +
+                `Missing IDs for: ${albumsWithoutIds.map(a => `${a.title} by ${a.artist}`).join(', ')}\n\n` +
+                `This ensures your ranking can be used as a template by others.`
+              )
+              return
+            }
+            
+            // All albums have IDs, proceed normally
+            handleContinue()
+          }}
           disabled={selectedSongs.size === 0}
           className="flex-1 px-6 py-3.5 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none"
         >
@@ -1328,7 +1415,8 @@ function SongRanking({
       coverArtUrl: s.cover_art_url || s.coverArtUrl || s.albumCoverArt,
       albumTitle: s.album_title || s.albumTitle,
       musicbrainzId: s.musicbrainz_id || s.id,
-    }))
+      albumId: s.albumId || (s as any).album_musicbrainz_id || null,
+    } as Song & { albumId?: string }))
 
     if (newSongs.length === 0 && existingSongs.length === 0) {
       setState({
@@ -1451,7 +1539,7 @@ function SongRanking({
             artist: song.artist,
             cover_art_url: song.coverArtUrl || null,
             album_title: song.albumTitle || null,
-            album_musicbrainz_id: existingSong?.album_musicbrainz_id || (song as any).albumId || (song as any).album_musicbrainz_id || null,
+            album_musicbrainz_id: (song as any).albumId || (song as any).album_musicbrainz_id || existingSong?.album_musicbrainz_id || null,
             rank: index + 1,
           }
         })
@@ -1484,7 +1572,7 @@ function SongRanking({
           artist: song.artist,
           cover_art_url: song.coverArtUrl || null,
           album_title: song.albumTitle || null,
-          album_musicbrainz_id: null,
+          album_musicbrainz_id: (song as any).albumId || (song as any).album_musicbrainz_id || null,
           rank: index + 1,
         }))
 
