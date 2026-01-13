@@ -47,12 +47,13 @@
 }
 
 html {
-  background: #f5f1e8;
+  background: var(--background);
 }
 
 body {
   color: var(--foreground);
-  background: #f5f1e8;
+  background: var(--background);
+
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

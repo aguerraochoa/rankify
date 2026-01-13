@@ -112,7 +112,7 @@ export default function ComparePage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -125,7 +125,7 @@ export default function ComparePage() {
 
   if (error || !yourRanking || !theirRanking || !comparison) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Failed to load comparison'}</p>
@@ -153,12 +153,12 @@ export default function ComparePage() {
     if (!yourRanking || !theirRanking || !comparison) return
 
     setIsGeneratingImage(true)
-    
+
     const timeoutId = setTimeout(() => {
       setIsGeneratingImage(false)
       alert('The download is taking longer than expected. Please try again.')
     }, 30000)
-    
+
     try {
       await generateComparisonImage({
         yourRankingName: yourRanking.name,
@@ -175,7 +175,7 @@ export default function ComparePage() {
     } catch (err: any) {
       clearTimeout(timeoutId)
       console.error('Error generating image:', err)
-      
+
       let errorMessage = 'Failed to generate image. '
       if (err.message?.includes('timeout')) {
         errorMessage += 'The operation timed out. Please try again.'
@@ -184,7 +184,7 @@ export default function ComparePage() {
       } else {
         errorMessage += err.message || 'Please try again.'
       }
-      
+
       alert(errorMessage)
     } finally {
       setIsGeneratingImage(false)
@@ -199,7 +199,7 @@ export default function ComparePage() {
   // Create a map of position differences for their songs
   const theirSongIndicators = new Map<string, { indicator: 'up' | 'down' | 'same' | 'unique', diffAmount: number }>()
   const yourSongIds = new Set(yourRanking.songs.map(getSongId))
-  
+
   comparison.sharedSongs.forEach(item => {
     const id = getSongId(item.song)
     theirSongIndicators.set(id, {
@@ -316,7 +316,7 @@ export default function ComparePage() {
                       <div className={`song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded-lg' : 'rounded-xl'} lg:rounded-xl ${mobileSideBySide ? 'shadow-sm' : 'shadow-md'} lg:shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300`}>
                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                         <svg className={`${mobileSideBySide ? 'w-4 h-4' : 'w-8 h-8'} lg:w-8 lg:h-8 text-white relative z-10`} fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                         </svg>
                       </div>
                       {song.cover_art_url && (
@@ -352,7 +352,7 @@ export default function ComparePage() {
                 )
               })}
             </div>
-            
+
             {/* Only in Your List - Below Your Ranking */}
             {comparison.onlyInYourList.length > 0 && (
               <div className={mobileSideBySide ? 'mt-3 lg:mt-4' : 'mt-4'}>
@@ -369,7 +369,7 @@ export default function ComparePage() {
                         <div className={`relative ${mobileSideBySide ? 'w-4 h-4 lg:w-16 lg:h-16 hidden lg:block' : 'w-16 h-16'} flex-shrink-0`}>
                           <div className={`song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} flex items-center justify-center overflow-hidden`}>
                             <svg className={mobileSideBySide ? 'w-3 h-3 lg:w-8 lg:h-8' : 'w-8 h-8'} fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                             </svg>
                           </div>
                           {song.cover_art_url && (
@@ -423,7 +423,7 @@ export default function ComparePage() {
               {theirSharedSongs.map((song, index) => {
                 const songId = getSongId(song)
                 const indicator = theirSongIndicators.get(songId)
-                
+
                 return (
                   <div
                     key={index}
@@ -436,7 +436,7 @@ export default function ComparePage() {
                       <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg lg:rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                         <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                         <svg className="w-4 h-4 lg:w-8 lg:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                         </svg>
                       </div>
                       {song.cover_art_url && (
@@ -498,7 +498,7 @@ export default function ComparePage() {
                 )
               })}
             </div>
-            
+
             {/* Only in Their List - Below Their Ranking */}
             {comparison.onlyInTheirList.length > 0 && (
               <div className={mobileSideBySide ? 'mt-3 lg:mt-4' : 'mt-4'}>
@@ -515,7 +515,7 @@ export default function ComparePage() {
                         <div className={`relative ${mobileSideBySide ? 'w-4 h-4 lg:w-16 lg:h-16 hidden lg:block' : 'w-16 h-16'} flex-shrink-0`}>
                           <div className={`song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] ${mobileSideBySide ? 'rounded-lg lg:rounded-xl shadow-sm lg:shadow-md' : 'rounded-xl shadow-md'} flex items-center justify-center overflow-hidden`}>
                             <svg className={mobileSideBySide ? 'w-3 h-3 lg:w-8 lg:h-8' : 'w-8 h-8'} fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                             </svg>
                           </div>
                           {song.cover_art_url && (

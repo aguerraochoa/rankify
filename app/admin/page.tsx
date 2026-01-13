@@ -74,7 +74,7 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -87,7 +87,7 @@ export default function AdminDashboard() {
 
   if (error) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
   if (!stats) return null
 
   return (
-    <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+    <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -222,11 +222,10 @@ export default function AdminDashboard() {
                       {ranking.song_count} songs • {ranking.owner_email || ranking.owner_username || 'Unknown'}
                     </div>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${
-                        ranking.status === 'draft' 
+                      <span className={`text-xs px-2 py-0.5 rounded-full ${ranking.status === 'draft'
                           ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                           : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300'
-                      }`}>
+                        }`}>
                         {ranking.status}
                       </span>
                       {ranking.is_public && (

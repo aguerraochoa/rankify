@@ -26,7 +26,7 @@ function SongsPageContent() {
     const templateId = searchParams.get('template')
     const extendId = searchParams.get('extend')
     const resumeId = searchParams.get('resume')
-    
+
     if (extendId) {
       setLoadingType('extend')
       loadExistingRanking(extendId)
@@ -96,7 +96,7 @@ function SongsPageContent() {
       // Set albums and template songs
       setSelectedAlbums(albums)
       setTemplateSongs(processedSongs)
-      
+
       // Go directly to review step
       setStep('review')
     } catch (error) {
@@ -134,7 +134,7 @@ function SongsPageContent() {
       // Process songs and group by album, preserving rank order
       const processedSongs: any[] = []
       const rankedSongs: any[] = []
-      
+
       ranking.songs.forEach((song: any, index: number) => {
         // Create album key
         const albumKey = song.album_title
@@ -173,7 +173,7 @@ function SongsPageContent() {
       setSelectedAlbums(albums)
       setTemplateSongs(processedSongs)
       setExistingRankedSongs(rankedSongs) // Store ranked songs for ranking step
-      
+
       // Go directly to review step
       setStep('review')
     } catch (error) {
@@ -238,13 +238,13 @@ function SongsPageContent() {
       const remainingSongIds = new Set(
         (rankingState.remaining || []).map((s: Song) => s.id || s.musicbrainzId).filter(Boolean)
       )
-      
+
       // Filter draftSongs to only include songs that are still remaining (not yet ranked)
-      const songsToProcess = remainingSongIds.size > 0 
+      const songsToProcess = remainingSongIds.size > 0
         ? draftSongs.filter((song: any) => {
-            const songId = song.musicbrainz_id || song.id
-            return songId && remainingSongIds.has(songId)
-          })
+          const songId = song.musicbrainz_id || song.id
+          return songId && remainingSongIds.has(songId)
+        })
         : draftSongs
 
       const processedSongs = songsToProcess.map((song: any) => ({
@@ -275,10 +275,10 @@ function SongsPageContent() {
       setExistingRankedSongs(existingRanked)
       // Set selectedSongs to the remaining songs that need to be ranked
       setSelectedSongs(processedSongs)
-      
+
       // Store the ranking state to restore in SongRanking
       setDraftRankingState(rankingState)
-      
+
       // Go directly to ranking step to restore the draft
       setStep('ranking')
     } catch (error) {
@@ -291,14 +291,14 @@ function SongsPageContent() {
   }
 
   if (loadingTemplate) {
-    const loadingMessage = loadingType === 'template' 
-      ? 'Loading template...' 
+    const loadingMessage = loadingType === 'template'
+      ? 'Loading template...'
       : loadingType === 'extend'
-      ? 'Loading ranking...'
-      : 'Loading draft...'
-    
+        ? 'Loading ranking...'
+        : 'Loading draft...'
+
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -310,7 +310,7 @@ function SongsPageContent() {
   }
 
   return (
-    <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+    <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
       <div className="max-w-6xl mx-auto">
         {/* Buttons row - top */}
         <div className="flex items-center justify-between gap-4 mb-4">
@@ -348,7 +348,7 @@ function SongsPageContent() {
             </button>
           )}
         </div>
-        
+
         {/* Title row - below buttons */}
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
@@ -426,15 +426,15 @@ function AlbumSelection({
 
     setLoading(true)
     try {
-      const query = searchMode === 'artist' 
+      const query = searchMode === 'artist'
         ? `artist:"${searchQuery.trim()}"`
         : searchQuery.trim()
-      
+
       const response = await fetch(
         `/api/music/search?q=${encodeURIComponent(query)}&type=release-group&limit=50&filterStudioAlbums=${searchMode === 'artist'}`
       )
       const data = await response.json()
-      
+
       // If searching by artist, filter to only show albums by that exact artist
       let results = data.results || []
       if (searchMode === 'artist') {
@@ -445,13 +445,13 @@ function AlbumSelection({
           const albumArtist = album.artist.toLowerCase()
           // Check if the artist name starts with the search query (for exact matches)
           // or if it's the primary artist (first in the list if multiple artists)
-          return albumArtist === searchArtist || 
-                 albumArtist.startsWith(searchArtist + ',') ||
-                 albumArtist.startsWith(searchArtist + ' &') ||
-                 albumArtist.startsWith(searchArtist + ' and')
+          return albumArtist === searchArtist ||
+            albumArtist.startsWith(searchArtist + ',') ||
+            albumArtist.startsWith(searchArtist + ' &') ||
+            albumArtist.startsWith(searchArtist + ' and')
         })
       }
-      
+
       setSearchResults(results)
     } catch (error) {
       console.error('Search error:', error)
@@ -489,27 +489,25 @@ function AlbumSelection({
           <button
             type="button"
             onClick={() => setSearchMode('album')}
-            className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-              searchMode === 'album'
-                ? 'bg-[#4a5d3a] text-white shadow-md'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
-            }`}
+            className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${searchMode === 'album'
+              ? 'bg-[#4a5d3a] text-white shadow-md'
+              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
           >
             Search Albums
           </button>
           <button
             type="button"
             onClick={() => setSearchMode('artist')}
-            className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
-              searchMode === 'artist'
-                ? 'bg-[#4a5d3a] text-white shadow-md'
-                : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
-            }`}
+            className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${searchMode === 'artist'
+              ? 'bg-[#4a5d3a] text-white shadow-md'
+              : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+              }`}
           >
             Search by Artist
           </button>
         </div>
-        
+
         <div className="relative flex items-center">
           <svg className="absolute left-4 w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -571,7 +569,7 @@ function AlbumSelection({
                     <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-lg flex items-center justify-center overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                       </svg>
                     </div>
                     {album.coverArtUrl && (
@@ -604,7 +602,7 @@ function AlbumSelection({
               </div>
             ))}
           </div>
-          
+
           {/* Warning message if albums are missing IDs */}
           {localSelected.some(album => !album.id) && (
             <div className="bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
@@ -623,12 +621,12 @@ function AlbumSelection({
               </div>
             </div>
           )}
-          
+
           <button
             onClick={() => {
               // Validate that all selected albums have IDs before proceeding
               const albumsWithoutIds = localSelected.filter(album => !album.id)
-              
+
               if (albumsWithoutIds.length > 0) {
                 alert(
                   `Please wait for album covers to load before continuing. ` +
@@ -638,7 +636,7 @@ function AlbumSelection({
                 )
                 return
               }
-              
+
               // All albums have IDs, proceed normally
               onAlbumsSelected(localSelected)
             }}
@@ -658,7 +656,7 @@ function AlbumSelection({
               ({searchResults.length} found)
             </span>
           </h3>
-          
+
           {/* Mobile: Table View */}
           <div className="md:hidden bg-white dark:bg-slate-800 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-lg overflow-hidden">
             <div className="overflow-x-auto">
@@ -686,16 +684,15 @@ function AlbumSelection({
                       <tr
                         key={album.id}
                         onClick={() => toggleAlbum(album)}
-                        className={`group cursor-pointer transition-all hover:bg-[#f0f8e8] dark:hover:bg-[#2a3d1a]/10 ${
-                          isSelected ? 'bg-[#f0f8e8] dark:bg-[#2a3d1a]/20' : ''
-                        }`}
+                        className={`group cursor-pointer transition-all hover:bg-[#f0f8e8] dark:hover:bg-[#2a3d1a]/10 ${isSelected ? 'bg-[#f0f8e8] dark:bg-[#2a3d1a]/20' : ''
+                          }`}
                       >
                         <td className="px-4 py-3">
                           <div className="relative w-12 h-12">
                             <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-lg shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                               <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                               <svg className="w-6 h-6 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                               </svg>
                             </div>
                             {album.coverArtUrl && (
@@ -760,11 +757,10 @@ function AlbumSelection({
                 <button
                   key={album.id}
                   onClick={() => toggleAlbum(album)}
-                  className={`group relative bg-white dark:bg-slate-800 rounded-2xl p-4 border-2 text-left transition-all card-hover ${
-                    isSelected
-                      ? 'border-[#4a5d3a] bg-[#f0f8e8] dark:bg-[#2a3d1a]/20 shadow-lg'
-                      : 'border-slate-200 dark:border-slate-700 hover:border-[#6b7d5a] dark:hover:border-[#6b7d5a] shadow-md hover:shadow-xl'
-                  }`}
+                  className={`group relative bg-white dark:bg-slate-800 rounded-2xl p-4 border-2 text-left transition-all card-hover ${isSelected
+                    ? 'border-[#4a5d3a] bg-[#f0f8e8] dark:bg-[#2a3d1a]/20 shadow-lg'
+                    : 'border-slate-200 dark:border-slate-700 hover:border-[#6b7d5a] dark:hover:border-[#6b7d5a] shadow-md hover:shadow-xl'
+                    }`}
                 >
                   {isSelected && (
                     <div className="absolute top-2 right-2 w-8 h-8 bg-[#4a5d3a] rounded-full flex items-center justify-center shadow-lg z-10">
@@ -778,7 +774,7 @@ function AlbumSelection({
                     <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-12 h-12 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                       </svg>
                     </div>
                     {/* Image - overlays placeholder when loaded */}
@@ -857,16 +853,16 @@ function SongReview({
   const albumsKey = albums.map(a => getAlbumKey(a)).sort().join(',')
   const previousAlbumsKeyRef = useRef<string>('')
   const previousPreSelectedSongsRef = useRef<any[] | undefined>(undefined)
-  
+
   useEffect(() => {
     // Only reset selections if albums actually changed (not just array reference)
     const albumsChanged = previousAlbumsKeyRef.current !== albumsKey
     previousAlbumsKeyRef.current = albumsKey
-    
+
     // Check if preSelectedSongs actually changed (not just reference)
     const preSelectedSongsChanged = previousPreSelectedSongsRef.current !== preSelectedSongs
     previousPreSelectedSongsRef.current = preSelectedSongs
-    
+
     const fetchSongs = async () => {
       setLoading(true)
       setError(null)
@@ -878,40 +874,40 @@ function SongReview({
         for (let i = 0; i < albums.length; i++) {
           const album = albums[i]
           const albumKey = getAlbumKey(album)
-          
+
           // Skip albums that don't have an ID and don't have a title (can't look them up)
           if (!album.id && !album.title) {
             console.warn(`Skipping album ${albumKey} - missing both ID and title`)
             songsMap[albumKey] = []
             continue
           }
-          
+
           try {
             // Add delay between requests (except for the first one)
             if (i > 0) {
               await new Promise(resolve => setTimeout(resolve, 1200)) // 1.2 seconds between requests
             }
-            
+
             const params = new URLSearchParams({
               releaseGroupId: album.id || '',
               albumTitle: album.title || '',
               artist: album.artist || '',
             })
-            
+
             // Only make the request if we have either an ID or both title and artist
             if (!album.id && (!album.title || !album.artist)) {
               console.warn(`Skipping album ${albumKey} - insufficient data to fetch songs`)
               songsMap[albumKey] = []
               continue
             }
-            
+
             const response = await fetch(`/api/music/album-songs?${params}`)
-            
+
             if (!response.ok) {
               const errorData = await response.json().catch(() => ({}))
               throw new Error(errorData.error || `HTTP ${response.status}`)
             }
-            
+
             const data = await response.json()
             songsMap[albumKey] = (data.songs || []).map((song: any) => ({
               ...song,
@@ -929,19 +925,19 @@ function SongReview({
         }
 
         setSongsByAlbum(songsMap)
-        
+
         // Only reset selections if albums actually changed
         // This prevents losing user's manual selections when parent re-renders
         if (albumsChanged) {
           // If preSelectedSongs provided, match and select only those songs
           // Otherwise, select all songs by default
           const selectedSongIds = new Set<string>()
-          
+
           if (preSelectedSongs && preSelectedSongs.length > 0) {
             // Match template songs with fetched songs
             // Create a matching function that compares by title, artist, and album
             const normalizeString = (str: string) => str.toLowerCase().trim()
-            
+
             Object.entries(songsMap).forEach(([albumId, songs]) => {
               songs.forEach((song) => {
                 // Try to match with preSelectedSongs
@@ -949,14 +945,14 @@ function SongReview({
                   // Match by title and artist (case-insensitive)
                   const titleMatch = normalizeString(song.title) === normalizeString(templateSong.title)
                   const artistMatch = normalizeString(song.artist) === normalizeString(templateSong.artist)
-                  
+
                   // Also try to match by album (if available)
-                  const albumMatch = !templateSong.albumTitle || !song.albumTitle || 
+                  const albumMatch = !templateSong.albumTitle || !song.albumTitle ||
                     normalizeString(song.albumTitle || '') === normalizeString(templateSong.albumTitle || '')
-                  
+
                   return titleMatch && artistMatch && albumMatch
                 })
-                
+
                 if (matched) {
                   const uniqueKey = `${albumId}:${song.id}`
                   selectedSongIds.add(uniqueKey)
@@ -972,7 +968,7 @@ function SongReview({
               })
             })
           }
-          
+
           setSelectedSongs(selectedSongIds)
         }
         // If albums haven't changed, preserve existing selections
@@ -992,7 +988,7 @@ function SongReview({
 
   const toggleSong = (songId: string, albumId: string) => {
     const uniqueKey = `${albumId}:${songId}`
-    
+
     // If extending, check if this song is already ranked
     if (isExtending && existingRankedSongs.length > 0) {
       // albumId is already the album key
@@ -1005,7 +1001,7 @@ function SongReview({
         }
       }
     }
-    
+
     const newSelected = new Set(selectedSongs)
     if (newSelected.has(uniqueKey)) {
       newSelected.delete(uniqueKey)
@@ -1055,16 +1051,16 @@ function SongReview({
     if (!isExtending || existingRankedSongs.length === 0) {
       return { ranked: false }
     }
-    
+
     const normalizeString = (str: string) => str.toLowerCase().trim()
     const rankedSong = existingRankedSongs.find((ranked) => {
       const titleMatch = normalizeString(song.title) === normalizeString(ranked.title)
       const artistMatch = normalizeString(song.artist) === normalizeString(ranked.artist)
-      const albumMatch = !ranked.albumTitle || !song.albumTitle || 
+      const albumMatch = !ranked.albumTitle || !song.albumTitle ||
         normalizeString(song.albumTitle || '') === normalizeString(ranked.albumTitle || '')
       return titleMatch && artistMatch && albumMatch
     })
-    
+
     if (rankedSong) {
       return { ranked: true, rank: rankedSong.rank }
     }
@@ -1128,7 +1124,7 @@ function SongReview({
           {isExtending ? 'Extend Ranking' : 'Review Songs'}
         </h2>
         <p className="text-slate-600 dark:text-slate-400 text-lg mb-4">
-          {isExtending 
+          {isExtending
             ? 'Select songs to add from your ranking. Songs with rank badges are already ranked.'
             : 'Select which songs to include in your ranking'}
         </p>
@@ -1166,7 +1162,7 @@ function SongReview({
                     <div className="album-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                       <svg className="w-10 h-10 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                        <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                       </svg>
                     </div>
                     {album.coverArtUrl && (
@@ -1203,11 +1199,10 @@ function SongReview({
                 </div>
                 <button
                   onClick={() => toggleAlbumSongs(albumKey)}
-                  className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-base font-semibold transition-all shadow-md hover:shadow-lg transform hover:scale-105 whitespace-nowrap ${
-                    allSelected
-                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
-                      : 'bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white'
-                  }`}
+                  className={`px-3 md:px-5 py-2 md:py-2.5 rounded-xl text-xs md:text-base font-semibold transition-all shadow-md hover:shadow-lg transform hover:scale-105 whitespace-nowrap ${allSelected
+                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                    : 'bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white'
+                    }`}
                 >
                   {allSelected ? 'Deselect All' : 'Select All'}
                 </button>
@@ -1234,13 +1229,12 @@ function SongReview({
                     return (
                       <label
                         key={uniqueKey}
-                        className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${
-                          isSelected
-                            ? rankedInfo.ranked
-                              ? 'bg-gradient-to-r from-[#f0f8e8] to-[#e8f5d8] dark:from-[#2a3d1a]/30 dark:to-[#3a4d2a]/30 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
-                              : 'bg-[#f0f8e8] dark:bg-[#2a3d1a]/20 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
-                            : 'bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
-                        }`}
+                        className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all ${isSelected
+                          ? rankedInfo.ranked
+                            ? 'bg-gradient-to-r from-[#f0f8e8] to-[#e8f5d8] dark:from-[#2a3d1a]/30 dark:to-[#3a4d2a]/30 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
+                            : 'bg-[#f0f8e8] dark:bg-[#2a3d1a]/20 border-2 border-[#6b7d5a] dark:border-[#6b7d5a]'
+                          : 'bg-slate-50 dark:bg-slate-900/50 border-2 border-transparent hover:border-slate-300 dark:hover:border-slate-600'
+                          }`}
                       >
                         <div className="relative">
                           <input
@@ -1248,11 +1242,10 @@ function SongReview({
                             checked={isSelected}
                             onChange={() => toggleSong(song.id, albumKey)}
                             disabled={rankedInfo.ranked && isExtending}
-                            className={`w-5 h-5 text-[#4a5d3a] rounded focus:ring-2 focus:ring-[#4a5d3a] ${
-                              rankedInfo.ranked && isExtending 
-                                ? 'cursor-not-allowed opacity-60' 
-                                : 'cursor-pointer'
-                            }`}
+                            className={`w-5 h-5 text-[#4a5d3a] rounded focus:ring-2 focus:ring-[#4a5d3a] ${rankedInfo.ranked && isExtending
+                              ? 'cursor-not-allowed opacity-60'
+                              : 'cursor-pointer'
+                              }`}
                           />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -1298,7 +1291,7 @@ function SongReview({
           onClick={() => {
             // Validate that all albums have IDs before proceeding
             const albumsWithoutIds = albums.filter(album => !album.id)
-            
+
             if (albumsWithoutIds.length > 0) {
               alert(
                 `Some albums are missing required information. Please go back and wait for album covers to load.\n\n` +
@@ -1307,7 +1300,7 @@ function SongReview({
               )
               return
             }
-            
+
             // All albums have IDs, proceed normally
             handleContinue()
           }}
@@ -1387,9 +1380,9 @@ function SongRanking({
         },
         draftRankingState.ranked // Ranked songs become "existing" ranked songs
       )
-      
+
       setRanker(restoredRanker)
-      
+
       // Restore the saved state
       setState(draftRankingState)
       return
@@ -1431,7 +1424,7 @@ function SongRanking({
     }
 
     const newRanker = new BinaryInsertionRanker(
-      newSongs, 
+      newSongs,
       (newState) => {
         setState(newState)
       },
@@ -1441,7 +1434,7 @@ function SongRanking({
     const initialState = newRanker.initialize()
     setState(initialState)
     // existingRankingId intentionally excluded to prevent re-initialization when saving drafts
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [songs, existingRankedSongs, draftRankingState])
 
   const handleComparison = async (result: ComparisonResult) => {
@@ -1497,7 +1490,7 @@ function SongRanking({
       if (!existingRankingId && setExistingRankingId) {
         setExistingRankingId(draft.id)
       }
-      
+
       alert('Draft saved! You can resume from "My Rankings" later.')
     } catch (error: any) {
       console.error('Error saving draft:', error)
@@ -1530,9 +1523,9 @@ function SongRanking({
           const existingSong = existingRankedSongs.find((es: any) => {
             const normalizeString = (str: string) => str.toLowerCase().trim()
             return normalizeString(es.title) === normalizeString(song.title) &&
-                   normalizeString(es.artist) === normalizeString(song.artist)
+              normalizeString(es.artist) === normalizeString(song.artist)
           })
-          
+
           return {
             musicbrainz_id: song.musicbrainzId || song.id,
             title: song.title,
@@ -1647,7 +1640,7 @@ function SongRanking({
             {existingRankingId ? 'Ranking Updated!' : 'Ranking Complete!'}
           </h2>
           <p className="text-slate-600 dark:text-slate-400 text-lg">
-            {existingRankingId 
+            {existingRankingId
               ? `Your ranking now has ${state.ranked.length} songs${state.totalComparisons > 0 ? ` (${state.totalComparisons} new comparisons)` : ''}`
               : `You've ranked ${state.ranked.length} songs in ${state.totalComparisons} comparisons`}
           </p>
@@ -1856,7 +1849,7 @@ function SongRanking({
                         <div className="absolute inset-0 opacity-15" style={{ backgroundImage: 'radial-gradient(circle at 3px 3px, white 1px, transparent 0)', backgroundSize: '12px 12px' }}></div>
                         <div className="absolute inset-0 bg-gradient-to-br from-[#c97d4a]/10 to-transparent"></div>
                         <svg className="w-10 h-10 md:w-24 md:h-24 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                         </svg>
                       </div>
                       {state.currentComparison.newSong.coverArtUrl && (
@@ -1910,7 +1903,7 @@ function SongRanking({
                       <div className="absolute inset-0 w-20 h-20 md:w-48 md:h-48 bg-gradient-to-br from-slate-300 to-slate-400 dark:from-slate-600 dark:to-slate-700 rounded-lg md:rounded-2xl shadow-md md:shadow-xl flex items-center justify-center relative overflow-hidden transition-opacity duration-300">
                         <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 3px 3px, white 1px, transparent 0)', backgroundSize: '12px 12px' }}></div>
                         <svg className="w-10 h-10 md:w-24 md:h-24 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                         </svg>
                       </div>
                       {state.currentComparison.comparedSong.coverArtUrl && (
@@ -1952,7 +1945,7 @@ function SongRanking({
                   </div>
                 </button>
               </div>
-              
+
               {/* Don't Know Button */}
               <button
                 onClick={() => handleComparison('dont_know')}
@@ -2021,7 +2014,7 @@ function SongRanking({
 export default function SongsPage() {
   return (
     <Suspense fallback={
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>

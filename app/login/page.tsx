@@ -24,7 +24,7 @@ export default function LoginPage() {
     const details = urlParams.get('details')
     const verified = urlParams.get('verified')
     const reset = urlParams.get('reset')
-    
+
     if (error === 'auth_failed') {
       setMessage(
         details
@@ -56,7 +56,7 @@ export default function LoginPage() {
     const checkUser = async () => {
       // Small delay to allow verification message to show
       await new Promise(resolve => setTimeout(resolve, 100))
-      
+
       const {
         data: { user },
       } = await supabase.auth.getUser()
@@ -64,7 +64,7 @@ export default function LoginPage() {
         // Get the redirect URL from query params
         const urlParams = new URLSearchParams(window.location.search)
         const nextUrl = urlParams.get('next') || '/'
-        
+
         // If we just verified, wait a moment to show the message
         if (urlParams.get('verified') === 'true') {
           setTimeout(() => {
@@ -108,22 +108,22 @@ export default function LoginPage() {
     if (pwd.length < 8) {
       return 'Password must be at least 8 characters'
     }
-    
+
     const hasLowercase = /[a-z]/.test(pwd)
     const hasUppercase = /[A-Z]/.test(pwd)
     const hasDigit = /[0-9]/.test(pwd)
     const hasSymbol = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd)
-    
+
     const missing = []
     if (!hasLowercase) missing.push('lowercase letter')
     if (!hasUppercase) missing.push('uppercase letter')
     if (!hasDigit) missing.push('digit')
     if (!hasSymbol) missing.push('symbol')
-    
+
     if (missing.length > 0) {
       return `Password must include at least one ${missing.join(', ')}`
     }
-    
+
     return null
   }
 
@@ -230,7 +230,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8" style={{ backgroundColor: '#f5f1e8' }}>
+    <div className="flex min-h-screen flex-col items-center justify-center p-8 bg-[#f5f1e8] dark:bg-slate-950">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">
@@ -253,11 +253,10 @@ export default function LoginPage() {
                 setPassword('')
                 setConfirmPassword('')
               }}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                mode === 'signin'
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${mode === 'signin'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               Sign In
             </button>
@@ -270,11 +269,10 @@ export default function LoginPage() {
                 setPassword('')
                 setConfirmPassword('')
               }}
-              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-                mode === 'signup'
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${mode === 'signup'
                   ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
+                }`}
             >
               Sign Up
             </button>
@@ -381,7 +379,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-slate-300 dark:border-slate-600"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#f5f1e8] dark:bg-slate-900 text-slate-500 dark:text-slate-400">Or</span>
+              <span className="px-2 bg-[#f5f1e8] dark:bg-slate-950 text-slate-500 dark:text-slate-400">Or</span>
             </div>
           </div>
 
@@ -426,13 +424,12 @@ export default function LoginPage() {
 
           {message && (
             <div
-              className={`p-3 rounded-lg text-sm ${
-                message.includes('failed') || message.includes('error') || message.includes('not match') || message.includes('at least')
+              className={`p-3 rounded-lg text-sm ${message.includes('failed') || message.includes('error') || message.includes('not match') || message.includes('at least')
                   ? 'bg-red-50 text-red-800 dark:bg-red-900/20 dark:text-red-400'
                   : message.includes('Check your email') || message.includes('verify')
-                  ? 'bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-                  : 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-              }`}
+                    ? 'bg-blue-50 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                    : 'bg-green-50 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                }`}
             >
               {message}
             </div>
@@ -465,7 +462,7 @@ export default function LoginPage() {
                 </svg>
               </button>
             </div>
-            
+
             <p className="text-slate-600 dark:text-slate-400 mb-6">
               Enter your email address and we&apos;ll send you a link to reset your password.
             </p>

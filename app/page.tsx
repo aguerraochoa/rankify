@@ -29,7 +29,7 @@ export default function Home() {
           data: { user },
           error,
         } = await supabase.auth.getUser()
-        
+
         if (error) {
           console.error('Error getting user:', error)
           setLoading(false)
@@ -38,7 +38,7 @@ export default function Home() {
         }
 
         setUser(user)
-        
+
         // Check if user is admin
         if (user) {
           try {
@@ -47,13 +47,13 @@ export default function Home() {
               .select('is_admin')
               .eq('id', user.id)
               .single()
-            
+
             setIsAdmin(profile?.is_admin === true)
           } catch (err) {
             console.error('Error checking admin status:', err)
           }
         }
-        
+
         setLoading(false)
         if (!user) {
           router.push('/login')
@@ -87,7 +87,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -103,7 +103,7 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen p-8" style={{ backgroundColor: '#f5f1e8' }}>
+    <main className="min-h-screen p-8 bg-[#f5f1e8] dark:bg-slate-950">
       <div className="max-w-6xl mx-auto">
         {/* Buttons row - top */}
         <div className="flex items-center justify-end gap-3 mb-4 relative">
@@ -151,9 +151,8 @@ export default function Home() {
           <div className="md:hidden relative more-menu-container">
             <button
               onClick={() => setShowMoreMenu(!showMoreMenu)}
-              className={`w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 ${
-                showMoreMenu ? 'bg-[#dce8d0] dark:bg-[#3a4d2a]/40' : ''
-              }`}
+              className={`w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 ${showMoreMenu ? 'bg-[#dce8d0] dark:bg-[#3a4d2a]/40' : ''
+                }`}
               aria-label="More options"
               aria-expanded={showMoreMenu}
             >
@@ -161,7 +160,7 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
               </svg>
             </button>
-            
+
             {/* More Menu Dropdown */}
             {showMoreMenu && (
               <>
@@ -233,7 +232,7 @@ export default function Home() {
             )}
           </div>
         </div>
-        
+
         {/* Title row - below buttons */}
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent">

@@ -97,7 +97,7 @@ export default function SharedRankingPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-[#4a5d3a] border-t-transparent mb-4"></div>
@@ -110,7 +110,7 @@ export default function SharedRankingPage() {
 
   if (error || !ranking) {
     return (
-      <main className="min-h-screen p-4 md:p-8" style={{ backgroundColor: '#f5f1e8' }}>
+      <main className="min-h-screen p-4 md:p-8 bg-[#f5f1e8] dark:bg-slate-950">
         <div className="max-w-6xl mx-auto">
           <div className="text-center py-16">
             <svg className="w-16 h-16 text-slate-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -168,9 +168,8 @@ export default function SharedRankingPage() {
                 <div className="relative more-menu-container">
                   <button
                     onClick={() => setShowMoreMenu(!showMoreMenu)}
-                    className={`w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 ${
-                      showMoreMenu ? 'bg-[#dce8d0] dark:bg-[#3a4d2a]/40' : ''
-                    }`}
+                    className={`w-10 h-10 flex items-center justify-center text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40 ${showMoreMenu ? 'bg-[#dce8d0] dark:bg-[#3a4d2a]/40' : ''
+                      }`}
                     aria-label="More options"
                     aria-expanded={showMoreMenu}
                   >
@@ -178,7 +177,7 @@ export default function SharedRankingPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                     </svg>
                   </button>
-                  
+
                   {/* More Menu Dropdown */}
                   {showMoreMenu && (
                     <>
@@ -220,7 +219,7 @@ export default function SharedRankingPage() {
               )}
             </div>
           </div>
-          
+
           <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] dark:from-[#6b7d5a] dark:to-[#8a9a7a] bg-clip-text text-transparent mb-2">
             {ranking.name || 'Shared Ranking'}
           </h1>
@@ -255,7 +254,7 @@ export default function SharedRankingPage() {
                 <div className="song-placeholder absolute inset-0 bg-gradient-to-br from-[#6b7d5a] to-[#4a5d3a] rounded-xl shadow-md flex items-center justify-center overflow-hidden transition-opacity duration-300">
                   <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '8px 8px' }}></div>
                   <svg className="w-7 h-7 md:w-8 md:h-8 text-white relative z-10" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
                   </svg>
                 </div>
                 {/* Image */}
