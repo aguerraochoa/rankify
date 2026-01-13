@@ -57,7 +57,9 @@ export default function CompareSelectionPage() {
   }, [router, supabase.auth])
 
   const handleSelectRanking = (yourRankingId: string) => {
-    router.push(`/rankings/compare/${theirRankingId}/${yourRankingId}`)
+    // Use replace instead of push to prevent navigation loop
+    // This removes the compare selection page from the history stack
+    router.replace(`/rankings/compare/${theirRankingId}/${yourRankingId}`)
   }
 
   if (loading) {
