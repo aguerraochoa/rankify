@@ -229,15 +229,15 @@ export default function ComparePage() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex items-center gap-4 mb-6">
-          <Link
-            href={`/rankings/${theirId}`}
+          <button
+            onClick={() => router.back()}
             className="group flex items-center gap-2 px-3 md:px-4 py-2 md:py-2.5 text-sm font-semibold text-[#4a5d3a] dark:text-[#6b7d5a] bg-[#e8f0e0] dark:bg-[#2a3d1a]/30 hover:bg-[#dce8d0] dark:hover:bg-[#3a4d2a]/40 transition-all rounded-xl shadow-sm hover:shadow-md border border-[#dce8d0] dark:border-[#3a4d2a]/40"
           >
             <svg className="w-4 h-4 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
             <span className="hidden sm:inline">Back</span>
-          </Link>
+          </button>
         </div>
 
         {/* Clean Header */}
