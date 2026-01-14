@@ -26,14 +26,14 @@ export async function GET(request: NextRequest) {
     }
 
     const users = await searchUsers(query.trim(), limit)
-    
+
     // Don't return the current user in search results
     const filteredUsers = users.filter((u) => u.id !== user.id)
 
     // Add public rankings count for each user
     const usersWithCounts = await Promise.all(
       filteredUsers.map(async (userProfile) => {
-        const publicRankings = await getPublicRankedLists(userProfile.id)
+        const { rankings: publicRankings } = await getPublicRankedLists(userProfile.id)
         return {
           ...userProfile,
           public_rankings_count: publicRankings.length,

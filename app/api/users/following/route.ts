@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const followingUsers = await getFollowingUsers(user.id)
+    const { users: followingUsers } = await getFollowingUsers(user.id)
 
     // Add public rankings count for each user
     const usersWithCounts = await Promise.all(
       followingUsers.map(async (userProfile) => {
-        const publicRankings = await getPublicRankedLists(userProfile.id)
+        const { rankings: publicRankings } = await getPublicRankedLists(userProfile.id)
         return {
           ...userProfile,
           public_rankings_count: publicRankings.length,

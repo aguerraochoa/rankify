@@ -35,7 +35,7 @@ export async function GET(
     }
 
     // Get public rankings
-    const publicRankings = await getPublicRankedLists(userId)
+    const { rankings: publicRankings } = await getPublicRankedLists(userId)
 
     return NextResponse.json({
       profile: {
@@ -124,7 +124,7 @@ export async function PUT(
     return NextResponse.json({ profile: updatedProfile })
   } catch (error: any) {
     console.error('Error updating user profile:', error)
-    
+
     // Handle unique constraint violation
     if (error.code === '23505' || error.message?.includes('unique')) {
       return NextResponse.json(
