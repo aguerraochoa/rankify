@@ -1,9 +1,8 @@
-'use client'
-
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import UserListModal from '@/components/UserListModal'
 
 interface UserProfile {
   id: string
@@ -35,10 +34,14 @@ export default function UserProfilePage() {
   const [rankings, setRankings] = useState<RankedList[]>([])
   const [isFollowing, setIsFollowing] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [loadingMoreRankings, setLoadingMoreRankings] = useState(false)
+  const [rankingsPage, setRankingsPage] = useState(1)
+  const [hasMoreRankings, setHasMoreRankings] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isTogglingFollow, setIsTogglingFollow] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showShareModal, setShowShareModal] = useState(false)
+  const [userListConfig, setUserListConfig] = useState<{ type: 'followers' | 'following'; title: string } | null>(null)
   const supabase = createClient()
 
   useEffect(() => {
@@ -54,7 +57,7 @@ export default function UserProfilePage() {
         // Fetch user profile and rankings (API allows public access)
         const [profileResponse, rankingsResponse, followResponse] = await Promise.all([
           fetch(`/api/users/${userId}`),
-          fetch(`/api/users/${userId}/rankings`),
+          fetch(`/api/users/${userId}/rankings?page=1&limit=25`),
           user ? fetch(`/api/users/${userId}/follow`) : Promise.resolve({ ok: false }),
         ])
 
@@ -69,6 +72,8 @@ export default function UserProfilePage() {
         if (rankingsResponse.ok) {
           const rankingsData = await rankingsResponse.json()
           setRankings(rankingsData.rankings || [])
+          setHasMoreRankings(rankingsData.hasMore || false)
+          setRankingsPage(1)
         }
       } catch (err: any) {
         console.error('Error fetching user data:', err)
@@ -82,6 +87,24 @@ export default function UserProfilePage() {
       fetchData()
     }
   }, [userId, router, supabase.auth])
+
+  const handleLoadMoreRankings = async () => {
+    setLoadingMoreRankings(true)
+    try {
+      const nextPage = rankingsPage + 1
+      const response = await fetch(`/api/users/${userId}/rankings?page=${nextPage}&limit=25`)
+      if (response.ok) {
+        const data = await response.json()
+        setRankings((prev) => [...prev, ...data.rankings])
+        setHasMoreRankings(data.hasMore || false)
+        setRankingsPage(nextPage)
+      }
+    } catch (err) {
+      console.error('Error loading more rankings:', err)
+    } finally {
+      setLoadingMoreRankings(false)
+    }
+  }
 
   const handleFollowToggle = async () => {
     setIsTogglingFollow(true)
@@ -210,14 +233,20 @@ export default function UserProfilePage() {
                 <p className="text-slate-600 dark:text-slate-400 mb-4 break-words">{profile.bio}</p>
               )}
               <div className="flex items-center gap-6">
-                <div>
+                <button
+                  onClick={() => setUserListConfig({ type: 'following', title: 'Following' })}
+                  className="text-left hover:opacity-70 transition-opacity"
+                >
                   <span className="text-xl md:text-2xl font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{profile.following}</span>
                   <span className="text-slate-600 dark:text-slate-400 ml-2">Following</span>
-                </div>
-                <div>
+                </button>
+                <button
+                  onClick={() => setUserListConfig({ type: 'followers', title: 'Followers' })}
+                  className="text-left hover:opacity-70 transition-opacity"
+                >
                   <span className="text-xl md:text-2xl font-bold text-[#4a5d3a] dark:text-[#6b7d5a]">{profile.followers}</span>
                   <span className="text-slate-600 dark:text-slate-400 ml-2">Followers</span>
-                </div>
+                </button>
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
@@ -248,8 +277,8 @@ export default function UserProfilePage() {
                     onClick={handleFollowToggle}
                     disabled={isTogglingFollow}
                     className={`w-full sm:w-auto px-6 py-3 font-semibold rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 ${isFollowing
-                        ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
-                        : 'bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white'
+                      ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                      : 'bg-gradient-to-r from-[#4a5d3a] to-[#6b7d5a] hover:from-[#5a6d4a] hover:to-[#7b8d6a] text-white'
                       }`}
                   >
                     {isTogglingFollow ? (
@@ -361,6 +390,28 @@ export default function UserProfilePage() {
               })}
             </div>
           )}
+
+          {hasMoreRankings && (
+            <div className="mt-8 text-center">
+              <button
+                onClick={handleLoadMoreRankings}
+                disabled={loadingMoreRankings}
+                className="inline-flex items-center gap-2 px-6 py-3 font-semibold rounded-xl transition-all shadow-md hover:shadow-lg bg-white dark:bg-slate-800 text-[#4a5d3a] dark:text-[#6b7d5a] border-2 border-[#4a5d3a] dark:border-[#6b7d5a] hover:bg-[#f5f1e8] dark:hover:bg-slate-700 disabled:opacity-50"
+              >
+                {loadingMoreRankings ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Loading...
+                  </>
+                ) : (
+                  'Load More Rankings'
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -431,6 +482,16 @@ export default function UserProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* User List Modal (Followers/Following) */}
+      {userListConfig && (
+        <UserListModal
+          userId={userId}
+          type={userListConfig.type}
+          title={userListConfig.title}
+          onClose={() => setUserListConfig(null)}
+        />
       )}
     </main>
   )

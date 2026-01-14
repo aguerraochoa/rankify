@@ -142,24 +142,34 @@ export async function saveDraftRanking(
 }
 
 /**
- * Get all ranked lists for a user (only completed, not drafts)
+ * Get all ranked lists for a user (only completed, not drafts) (paginated)
  */
-export async function getUserRankedLists(userId: string): Promise<RankedList[]> {
+export async function getUserRankedLists(
+  userId: string,
+  page: number = 1,
+  limit: number = 25
+): Promise<{ rankings: RankedList[]; hasMore: boolean }> {
   const supabase = await createClient()
+  const from = (page - 1) * limit
+  const to = from + limit - 1
 
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from('ranked_lists')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('user_id', userId)
     .eq('status', 'completed')
     .order('created_at', { ascending: false })
+    .range(from, to)
 
   if (error) {
     console.error('Error fetching ranked lists:', error)
     throw error
   }
 
-  return data || []
+  const rankings = data || []
+  const hasMore = count ? from + rankings.length < count : false
+
+  return { rankings, hasMore }
 }
 
 /**
@@ -368,26 +378,35 @@ export async function getRankedListByShareToken(
 }
 
 /**
- * Get public ranked lists for a user
+ * Get public ranked lists for a user (paginated)
  */
 export async function getPublicRankedLists(
-  userId: string
-): Promise<RankedList[]> {
+  userId: string,
+  page: number = 1,
+  limit: number = 25
+): Promise<{ rankings: RankedList[]; hasMore: boolean }> {
   const supabase = await createClient()
+  const from = (page - 1) * limit
+  const to = from + limit - 1
 
-  const { data, error } = await supabase
+  const { data, error, count } = await supabase
     .from('ranked_lists')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('user_id', userId)
     .eq('is_public', true)
+    .eq('status', 'completed')
     .order('created_at', { ascending: false })
+    .range(from, to)
 
   if (error) {
     console.error('Error fetching public ranked lists:', error)
     throw error
   }
 
-  return data || []
+  const rankings = data || []
+  const hasMore = count ? from + rankings.length < count : false
+
+  return { rankings, hasMore }
 }
 
 /**
@@ -419,7 +438,7 @@ export async function generateShareToken(
       })
       .eq('user_id', userId)
       .eq('id', listId)
-    
+
     return existing.share_token
   }
 

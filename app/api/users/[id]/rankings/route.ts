@@ -11,11 +11,14 @@ export async function GET(
 ) {
   try {
     const userId = params.id
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '25')
 
     // Get public rankings for this user (no auth required for public data)
-    const rankings = await getPublicRankedLists(userId)
+    const { rankings, hasMore } = await getPublicRankedLists(userId, page, limit)
 
-    return NextResponse.json({ rankings })
+    return NextResponse.json({ rankings, hasMore })
   } catch (error) {
     console.error('Error fetching user rankings:', error)
     return NextResponse.json(

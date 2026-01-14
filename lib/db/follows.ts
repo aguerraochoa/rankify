@@ -151,28 +151,34 @@ export async function getFollowCounts(userId: string): Promise<{
 }
 
 /**
- * Get users that a user is following with full profile details
+ * Get users that a user is following with full profile details (paginated)
  */
-export async function getFollowingUsers(userId: string): Promise<UserProfile[]> {
+export async function getFollowingUsers(
+  userId: string,
+  page: number = 1,
+  limit: number = 25
+): Promise<{ users: UserProfile[]; hasMore: boolean }> {
   const supabase = await createClient()
+  const from = (page - 1) * limit
+  const to = from + limit - 1
 
   // First get the following IDs
-  const { data: followsData, error: followsError } = await supabase
+  const { data: followsData, error: followsError, count } = await supabase
     .from('follows')
-    .select('following_id, created_at')
+    .select('following_id, created_at', { count: 'exact' })
     .eq('follower_id', userId)
     .order('created_at', { ascending: false })
+    .range(from, to)
 
   if (followsError) {
-    console.error('Error fetching following:', followsError)
+    console.error('Error fetching following IDs:', followsError)
     throw followsError
   }
 
   if (!followsData || followsData.length === 0) {
-    return []
+    return { users: [], hasMore: false }
   }
 
-  // Then get the profile details for each following user
   const followingIds = followsData.map((f) => f.following_id)
   const { data: profilesData, error: profilesError } = await supabase
     .from('profiles')
@@ -184,10 +190,63 @@ export async function getFollowingUsers(userId: string): Promise<UserProfile[]> 
     throw profilesError
   }
 
-  // Return profiles in the same order as follows (most recent first)
   const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]))
-  return followingIds
+  const users = followingIds
     .map((id) => profilesMap.get(id))
     .filter((profile): profile is UserProfile => profile !== undefined)
+
+  const hasMore = count ? from + followsData.length < count : false
+
+  return { users, hasMore }
+}
+
+/**
+ * Get users that follow a user with full profile details (paginated)
+ */
+export async function getFollowersUsers(
+  userId: string,
+  page: number = 1,
+  limit: number = 25
+): Promise<{ users: UserProfile[]; hasMore: boolean }> {
+  const supabase = await createClient()
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  // First get the follower IDs
+  const { data: followsData, error: followsError, count } = await supabase
+    .from('follows')
+    .select('follower_id, created_at', { count: 'exact' })
+    .eq('following_id', userId)
+    .order('created_at', { ascending: false })
+    .range(from, to)
+
+  if (followsError) {
+    console.error('Error fetching follower IDs:', followsError)
+    throw followsError
+  }
+
+  if (!followsData || followsData.length === 0) {
+    return { users: [], hasMore: false }
+  }
+
+  const followerIds = followsData.map((f) => f.follower_id)
+  const { data: profilesData, error: profilesError } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', followerIds)
+
+  if (profilesError) {
+    console.error('Error fetching follower user profiles:', profilesError)
+    throw profilesError
+  }
+
+  const profilesMap = new Map((profilesData || []).map((p) => [p.id, p]))
+  const users = followerIds
+    .map((id) => profilesMap.get(id))
+    .filter((profile): profile is UserProfile => profile !== undefined)
+
+  const hasMore = count ? from + followsData.length < count : false
+
+  return { users, hasMore }
 }
 
