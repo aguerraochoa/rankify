@@ -28,6 +28,11 @@ export default function UserListModal({ userId, type, title, onClose }: UserList
 
     useEffect(() => {
         fetchUsers(1, false)
+        // Lock body scroll
+        document.body.style.overflow = 'hidden'
+        return () => {
+            document.body.style.overflow = 'unset'
+        }
     }, [userId, type])
 
     const fetchUsers = async (pageNum: number, isLoadMore: boolean) => {
