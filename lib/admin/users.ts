@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUserProfile } from '@/lib/db/users'
-import { getPublicRankedLists } from '@/lib/db/rankedLists'
 import { getFollowCounts } from '@/lib/db/follows'
 
 export interface AdminUser {

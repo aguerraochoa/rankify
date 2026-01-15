@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
-import { compareRankings, type ComparisonResult } from '@/lib/ranking/compareRankings'
+import { compareRankings, getSongId, type ComparisonResult } from '@/lib/ranking/compareRankings'
 import { generateComparisonImage } from '@/lib/image/generateRankingImage'
 
 interface RankedSong {
@@ -191,10 +191,6 @@ export default function ComparePage() {
     }
   }
 
-  // Helper to get song ID
-  const getSongId = (song: RankedSong): string => {
-    return song.musicbrainz_id || `${song.title}|${song.artist}`
-  }
 
   // Create a map of position differences for their songs
   const theirSongIndicators = new Map<string, { indicator: 'up' | 'down' | 'same' | 'unique', diffAmount: number }>()

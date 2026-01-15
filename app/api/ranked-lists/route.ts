@@ -16,8 +16,8 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const lists = await getUserRankedLists(user.id)
-    return NextResponse.json({ lists })
+    const { rankings } = await getUserRankedLists(user.id, 1, 100)
+    return NextResponse.json({ lists: rankings })
   } catch (error) {
     console.error('Error fetching ranked lists:', error)
     return NextResponse.json(

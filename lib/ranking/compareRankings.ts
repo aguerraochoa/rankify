@@ -26,8 +26,11 @@ export interface SharedSongComparison {
 /**
  * Get unique identifier for a song
  */
-function getSongId(song: RankedSong): string {
-  return song.musicbrainz_id || `${song.title}|${song.artist}`
+export function getSongId(song: RankedSong): string {
+  // Normalize strings for broader matching
+  // Remove special characters, extra spaces, and convert to lowercase
+  const normalize = (str: string) => str.toLowerCase().trim().replace(/[^a-z0-9 ]/g, '')
+  return `${normalize(song.title)}|${normalize(song.artist)}`
 }
 
 /**
@@ -39,14 +42,14 @@ export function findSharedSongs(
 ): RankedSong[] {
   const yourSongIds = new Set(yourSongs.map(getSongId))
   const theirSongIds = new Set(theirSongs.map(getSongId))
-  
+
   const sharedIds = new Set<string>()
   yourSongIds.forEach(id => {
     if (theirSongIds.has(id)) {
       sharedIds.add(id)
     }
   })
-  
+
   // Return songs from your list that are shared (preserve order)
   return yourSongs.filter(song => sharedIds.has(getSongId(song)))
 }
@@ -60,7 +63,7 @@ export function reRankSongs(
 ): Map<string, number> {
   const ranks = new Map<string, number>()
   let rank = 1
-  
+
   songs.forEach(song => {
     const id = getSongId(song)
     if (sharedSongIds.has(id)) {
@@ -68,7 +71,7 @@ export function reRankSongs(
       rank++
     }
   })
-  
+
   return ranks
 }
 
@@ -81,16 +84,16 @@ export function calculatePositionDifferences(
 ): SharedSongComparison[] {
   const sharedSongs = findSharedSongs(yourSongs, theirSongs)
   const sharedIds = new Set(sharedSongs.map(getSongId))
-  
+
   const yourRanks = reRankSongs(yourSongs, sharedIds)
   const theirRanks = reRankSongs(theirSongs, sharedIds)
-  
+
   return sharedSongs.map(song => {
     const id = getSongId(song)
     const yourRank = yourRanks.get(id) || 0
     const theirRank = theirRanks.get(id) || 0
     const diff = theirRank - yourRank
-    
+
     let indicator: 'up' | 'down' | 'same'
     if (diff > 0) {
       indicator = 'down'
@@ -99,7 +102,7 @@ export function calculatePositionDifferences(
     } else {
       indicator = 'same'
     }
-    
+
     return {
       song,
       yourRank,
@@ -121,15 +124,15 @@ export function calculateSimilarity(
 ): number {
   const sharedSongs = findSharedSongs(yourSongs, theirSongs)
   const n = sharedSongs.length
-  
+
   // Edge cases
   if (n === 0) return 0
   if (n === 1) return 100 // Only one shared song = perfect match
-  
+
   const sharedIds = new Set(sharedSongs.map(getSongId))
   const yourRanks = reRankSongs(yourSongs, sharedIds)
   const theirRanks = reRankSongs(theirSongs, sharedIds)
-  
+
   // Calculate sum of squared differences
   let sumDiffSquared = 0
   sharedSongs.forEach(song => {
@@ -139,13 +142,13 @@ export function calculateSimilarity(
     const diff = yourRank - theirRank
     sumDiffSquared += diff * diff
   })
-  
+
   // Spearman's formula: ρ = 1 - (6 × Σd²) / (n × (n² - 1))
   const spearman = 1 - (6 * sumDiffSquared) / (n * (n * n - 1))
-  
+
   // Convert from [-1, 1] to [0, 100]
   const similarity = ((spearman + 1) / 2) * 100
-  
+
   return Math.round(similarity)
 }
 
@@ -182,7 +185,7 @@ export function compareRankings(
   const sharedComparisons = calculatePositionDifferences(yourSongs, theirSongs)
   const onlyInYour = getOnlyInYourList(yourSongs, theirSongs)
   const onlyInTheir = getOnlyInTheirList(yourSongs, theirSongs)
-  
+
   return {
     similarity,
     sharedSongs: sharedComparisons,
